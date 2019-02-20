@@ -325,9 +325,16 @@ typedef struct
     osThreadId task_id;
     osMessageQId msg_id;
     osMessageQId host_msg_id;
+    bool done;
 }scale_task_information_t;
 
     
+/*
+* @brief 电子称子任务
+* @param argument 任务参数
+* @return 无
+* @note
+*/
 
 void scale_task(void const *argument)
 {
@@ -514,13 +521,14 @@ typedef struct
 {
     uint8_t cnt;
     scale_task_information_t info[SCALE_TASK_SCALE_CNT_MAX];
+    bool done[SCALE_TASK_SCALE_CNT_MAX];
 }scale_configration_t;
 
 /*
-* @brief 
-* @param
-* @param
-* @return 
+* @brief 电子称子任务配置初始化
+* @param configration 任务参数指针
+* @param host_msg_id 主任务消息队列句柄
+* @return 无
 * @note
 */
 static void scale_task_scale_configration_init(scale_configration_t *configration,osMessageQId host_msg_id)
@@ -538,6 +546,13 @@ static void scale_task_scale_configration_init(scale_configration_t *configratio
         configration->info[i].host_msg_id = host_msg_id;
     }
 }
+
+/*
+* @brief 电子称子任务创建
+* @param configration 任务参数指针
+* @return 无
+* @note
+*/
 static void scale_host_task_create_sub_task(scale_configration_t *configration)
 {
     for (uint8_t i = 0;i < configration->cnt;i ++) {
@@ -547,23 +562,124 @@ static void scale_host_task_create_sub_task(scale_configration_t *configration)
     }
 }
 
+
 /*
-* @brief 
-* @param
-* @param
-* @return 
+* @brief 处理获取配置消息
+* @param configration 配置指针
+* @param msg_id 目的消息句柄
+* @return 无
+* @note
+*/
+static void scale_host_task_process_configration(osMessageQId msg_id,scale_configration_t *configration)
+{
+    osStatus status;
+    static scale_host_task_configration_msg_t cfg_msg;
+    
+    cfg_msg.cnt = configration.cnt;
+    for (uint8_t i = 0;i < cfg_msg.cnt;i ++) {
+        cfg_msg.scale_addr[i] = configration->info[i].addr;
+    }
+    status = osMessagePut(msg_id,(uint32_t)&cfg_msg,SCALE_TASK_MSG_PUT_TIMEOUT_VALUE);
+    if (status != osOK) {
+        log_error("scale host task put cfg msg err.code:%d.\r\n",status);
+    }   
+}
+
+
+static void scale_host_task_seek_
+/*
+* @brief 处理获取配置消息
+* @param configration 配置指针
+* @param msg_id 目的消息句柄
+* @return 无
+* @note
+*/
+static void scale_host_task_process_net_weight(osMessageQId msg_id,uint8_t addr,scale_configration_t *configration)
+{
+    osStatus status;
+    osEvent os_event;
+    uint8_t cnt;
+    scale_host_msg_t req_msg,rsp_msg;
+    utils_timer_t timer;
+    static scale_host_task_net_weight_msg_t net_weight_msg;
+
+    utils_timer_init(&timer,SCALE_HOST_TASK_MSG_WAIT_TIMEOUT_VALUE,false);
+    req_msg.type = REQ_NET_WEIGHT;
+
+    if (addr == 0) {
+        net_weight_msg.cnt = configration->cnt;
+    } else {
+        net_weight_msg.cnt = 1;
+    }
+
+    for (uint8_t i = 0;i < configration->cnt;i ++) {
+        osMessagePut(configration->info[i].msg_id,*(uint32_t *)&req_msg,SCALE_HOST_TASK_MSG_PUT_TIMEOUT_VALUE);
+    }
+    for (uint8_t i = 0;i < configration->cnt;i ++) {
+         os_event = osMessageGet(scale_host_task_msg_q_id,utils_timer_value(&timer));
+            if (os_event.status == osEventMessage) {
+                rsp_msg = *(task_msg_t *)&os_msg.value.v;
+                
+                
+        }
+
+    status = osMessagePut(msg_id,(uint32_t)&net_weight_msg,SCALE_HOST_TASK_MSG_PUT_TIMEOUT_VALUE);
+    if (status != osOK) {
+        log_error("scale host task put cfg msg err.code:%d.\r\n",status);
+    }   
+}
+
+
+
+/*
+* @brief 电子秤主任务
+* @param argument 任务参数
+* @return 无
 * @note
 */
 
-void scale_task(void const *argument)
+void scale_host_task(void const *argument)
 {
-    osMessageQId host_msg_id;
+    int rc;
+    osMessageQId scale_host_task_msg_q_id;
     scale_configration_t configration;
     
-    scale_task_scale_configration_init(&configration,host_msg_id);
+    
 
+    osMessageQDef(scale_host_task_msg_q,10,uint32_t);
+    scale_host_task_msg_q_id = osMessageCreate(osMessageQ(scale_host_task_msg_q),0);
+    log_assert(((scale_task_information_t*)argument)->msg_id);
+    /*初始化电子秤子任务配置*/
+    scale_task_scale_configration_init(&configration,scale_host_task_msg_q_id);
+    /*创建电子秤子任务*/
+    scale_host_task_create_sub_task(&configration);
+    while (1) {
+        os_msg = osMessageGet(scale_host_task_msg_q_id,SCALE_HOST_TASK_MSG_WAIT_TIMEOUT_VALUE);
+        if (os_msg.status == osEventMessage) {
+            req_msg = *(task_msg_t *)&os_msg.value.v;
+ 
+        /*获取称的配置信息*/
+        if (req_msg.type == REQ_SCALE_CONFIGRATION) { 
+            scale_host_task_process_configration(controller_task_cfg_msg_q_id,&configration);
+        }
+        /*获取净重值*/
+        if (req_msg.type == REQ_NET_WEIGHT) { 
+            scale_host_task_process_net_weight(controller_task_weight_msg_q_id,req_msg.reserved,&configration);
+        }
+        /*去除皮重*/
+        if (req_msg.type == REQ_REMOVE_TAR_WEIGHT) { 
+            scale_host_task_process_tare_weight(controller_task_weight_msg_q_id,req_msg.reserved);
+        }
+        /*0点校准*/
+        if (req_msg.type == REQ_CALIBRATION_ZERO) { 
+            scale_host_task_process_calibration_zero(controller_task_zero_msg_q_id,req_msg.reserved,req_msg.value);
+        }
+        /*获取净重值*/
+        if (req_msg.type == REQ_NET_WEIGHT) { 
+            scale_host_task_process_calibration_full(controller_task_full_msg_q_id,req_msg.reserved,req_msg.value);
+        }
 
-
+    }
 
 
 }

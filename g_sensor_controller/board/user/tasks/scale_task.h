@@ -4,7 +4,7 @@
 
 
 extern osThreadId   scale_task_hdl;
-extern osMessageQId scale_task_msg_q_id;
+extern osMessageQId scale_host_task_msg_q_id;
 void scale_task(void const * argument);
 
 
@@ -56,5 +56,30 @@ void scale_task(void const * argument);
 #define  SCALE_TASK_SUCCESS_VALUE               0x00
 #define  SCALE_TASK_FAILURE_VALUE               0x01
 /*协议定义结束*/
+
+
+typedef struct
+{
+    osMutexId mutex;
+    uint8_t cnt;
+    int16_t net_weight[SCALE_HOST_TASK_SCALE_CNT_MAX];
+}scale_host_task_net_weight_msg_t;
+
+typedef struct
+{
+    uint8_t cnt;
+    uint8_t scale_addr[SCALE_HOST_TASK_SCALE_CNT_MAX];
+}scale_host_task_configration_msg_t;
+
+typedef struct
+{
+    uint8_t opt_value;
+}scale_host_task_opt_msg_t;
+
+
+
+
+
+
 
 #endif
