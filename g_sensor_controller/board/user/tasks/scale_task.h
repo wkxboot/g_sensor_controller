@@ -7,6 +7,7 @@ extern osThreadId   scale_task_hdl;
 extern osMessageQId scale_host_task_msg_q_id;
 void scale_task(void const * argument);
 
+#define  SCALE_HOST_TASK_SCALE_CNT_MAX       8
 
 
 #define  SCALE_TASK_RX_BUFFER_SIZE            32
@@ -57,6 +58,8 @@ void scale_task(void const * argument);
 #define  SCALE_TASK_FAILURE_VALUE               0x01
 /*协议定义结束*/
 
+#define  SCALE_TASK_SUCCESS                     0x11
+#define  SCALE_TASK_FAILURE                     0x22
 
 typedef struct
 {
