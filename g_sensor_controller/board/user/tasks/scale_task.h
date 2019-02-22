@@ -65,7 +65,9 @@ typedef struct
 {
     osMutexId mutex;
     uint8_t cnt;
+    uint8_t index;
     int16_t net_weight[SCALE_HOST_TASK_SCALE_CNT_MAX];
+
 }scale_host_task_net_weight_msg_t;
 
 typedef struct
