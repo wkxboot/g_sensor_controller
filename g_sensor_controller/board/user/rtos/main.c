@@ -34,16 +34,8 @@
 #include "cmsis_os.h"
 #include "board.h"
 #include "tasks_init.h"
-#include "adc_task.h"
-#include "temperature_task.h"
-#include "cpu_task.h"
-#include "protocol_task.h"
-#include "scale_task.h"
-#include "door_lock_task.h"
-
 #include "log.h"
-#define LOG_MODULE_NAME   "[main]"
-#define LOG_MODULE_LEVEL   LOG_LEVEL_DEBUG  
+
 
 
 
@@ -64,44 +56,17 @@ return osKernelSysTick();
  */
 int main(void)
 { 
-    int result;
-    result = bsp_board_init();
-    if(result != 0){
-    while(1);
-    }
+    int rc;
+    rc = bsp_board_init();
+    log_assert(rc == 0);
     log_init();
     tasks_init();
-    
-    osThreadDef(cpu_task, cpu_task, osPriorityNormal, 0, 128);
-    cpu_task_hdl = osThreadCreate(osThread(cpu_task), NULL);
-    log_assert(cpu_task_hdl);
-    
-    osThreadDef(scale_task, scale_task, osPriorityNormal, 0, 256);
-    scale_task_hdl = osThreadCreate(osThread(scale_task), NULL);
-    log_assert(scale_task_hdl);
-    
-    osThreadDef(door_lock_task, door_lock_task, osPriorityNormal, 0, 256);
-    door_lock_task_hdl = osThreadCreate(osThread(door_lock_task), NULL);
-    log_assert(door_lock_task_hdl);
-    
-    osThreadDef(protocol_task, protocol_task, osPriorityNormal, 0, 256);
-    protocol_task_hdl = osThreadCreate(osThread(protocol_task), NULL);
-    log_assert(protocol_task_hdl);
-    
-    osThreadDef(temperature_task, temperature_task, osPriorityNormal, 0, 256);
-    temperature_task_hdl = osThreadCreate(osThread(temperature_task), NULL);
-    log_assert(temperature_task_hdl);
-   
-    osThreadDef(adc_task, adc_task, osPriorityNormal, 0, 256);
-    adc_task_hdl = osThreadCreate(osThread(adc_task), NULL);
-    log_assert(adc_task_hdl);
-    
     
     /* Start scheduler */
     osKernelStart();
 
 
-    while (1)
-    {
+    while (1) {
+
     }
 }

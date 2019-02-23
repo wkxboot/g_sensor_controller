@@ -1,14 +1,12 @@
 #ifndef  __SCALE_TASK_H__
 #define  __SCALE_TASK_H__
 
-
-
 extern osThreadId   scale_task_hdl;
-extern osMessageQId scale_host_task_msg_q_id;
+extern osMessageQId scale_task_msg_q_id;
 void scale_task(void const * argument);
 
-#define  SCALE_HOST_TASK_SCALE_CNT_MAX       8
-
+#define  SCALE_TASK_SCALE_CNT_MAX             8
+#define  SCALE_TASK_HARD_CONFIGRATION_ADDR    0x20000
 
 #define  SCALE_TASK_RX_BUFFER_SIZE            32
 #define  SCALE_TASK_TX_BUFFER_SIZE            32
@@ -26,9 +24,6 @@ void scale_task(void const * argument);
 
 #define  SCALE_TASK_SUCCESS                   1
 #define  SCALE_TASK_FAILURE                   2
-
-#define  SCALE_TASK_SCALE_CNT_MAX             5
-
 /*数字变送器协议*/
 /*协议定义开始*/
 
@@ -48,7 +43,7 @@ void scale_task(void const * argument);
 
 /*操作码*/
 #define  SCALE_TASK_PDU_CODE_NET_WEIGHT         0x00  
-#define  SCALE_TASK_PDU_CODE_REMOVE_TAR_WEIGHT  0x01
+#define  SCALE_TASK_PDU_CODE_REMOVE_TARE_WEIGHT 0x01
 #define  SCALE_TASK_PDU_CODE_CALIBRATION_ZERO   0x02 
 #define  SCALE_TASK_PDU_CODE_CALIBRATION_FULL   0x03   
 
@@ -56,35 +51,54 @@ void scale_task(void const * argument);
 /*操作结果码*/
 #define  SCALE_TASK_SUCCESS_VALUE               0x00
 #define  SCALE_TASK_FAILURE_VALUE               0x01
+#define  SCALE_TASK_ERR_NET_WEIGHT              0x7FFF
 /*协议定义结束*/
 
-#define  SCALE_TASK_SUCCESS                     0x11
-#define  SCALE_TASK_FAILURE                     0x22
 
 typedef struct
 {
     osMutexId mutex;
     uint8_t cnt;
     uint8_t index;
-    int16_t net_weight[SCALE_HOST_TASK_SCALE_CNT_MAX];
+    int16_t net_weight[SCALE_TASK_SCALE_CNT_MAX];
 
-}scale_host_task_net_weight_msg_t;
+}scale_task_net_weight_msg_t;
 
 typedef struct
 {
     uint8_t cnt;
-    uint8_t scale_addr[SCALE_HOST_TASK_SCALE_CNT_MAX];
-}scale_host_task_configration_msg_t;
+    uint8_t scale_addr[SCALE_TASK_SCALE_CNT_MAX];
+}scale_task_configration_msg_t;
 
 typedef struct
 {
-    uint8_t opt_value;
-}scale_host_task_opt_msg_t;
+    uint8_t cnt;
+    uint8_t index;
+    uint8_t opt_value[SCALE_TASK_SCALE_CNT_MAX];
+}scale_task_opt_msg_t;
+
+typedef struct
+{
+    int handle;
+    uint8_t addr;
+    uint8_t port;
+    uint32_t baud_rates;
+    uint8_t data_bits;
+    uint8_t stop_bits;
+}scale_configration_t;
 
 
+typedef struct
+{
+    uint8_t cnt;
+    scale_configration_t scale[SCALE_TASK_SCALE_CNT_MAX];
+}scale_task_information_t;
 
-
-
+typedef struct
+{
+    uint8_t cnt;
+    uint8_t addr[SCALE_TASK_SCALE_CNT_MAX];
+}scale_hard_configration_t;
 
 
 #endif

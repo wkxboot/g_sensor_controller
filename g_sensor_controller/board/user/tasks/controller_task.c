@@ -1,32 +1,40 @@
 #include "board.h"
 #include "cmsis_os.h"
 #include "serial.h"
-#include "tasks_init.h"
 #include "scale_task.h"
-#include "protocol_task.h"
+#include "firmware_version.h"
+#include "tasks_init.h"
+#include "controller_task.h"
 #include "log.h"
 
-extern int protocol_serial_handle;
+int controller_serial_handle;
 extern serial_hal_driver_t nxp_serial_uart_hal_driver;
 
-osThreadId   protocol_task_hdl;
-osMessageQId protocol_task_msg_q_id;
+osThreadId   controller_task_hdl;
+osMessageQId controller_task_msg_q_id;
+
+osMessageQId controller_task_cfg_msg_q_id;
+osMessageQId controller_task_net_weight_msg_q_id;
+osMessageQId controller_task_remove_tare_weight_msg_q_id;
+osMessageQId controller_task_calibration_zero_msg_q_id;
+osMessageQId controller_task_calibration_full_msg_q_id;
+
 
 typedef enum
 {
-    PROTOCOL_TASK_ADU_HEAD_STEP = 0,
-    PROTOCOL_TASK_PDU_STEP,
-    PROTOCOL_TASK_ADU_CRC_STEP
-}protocol_step_t;
+    CONTROLLER_TASK_ADU_HEAD_STEP = 0,
+    CONTROLLER_TASK_PDU_STEP,
+    CONTROLLER_TASK_ADU_CRC_STEP
+}controller_step_t;
 
-#define  PROTOCOL_TASK_PDU_VALUE_CNT_MAX            2
-#define  PROTOCOL_TASK_PDU_SIZE_MIN                 3      
+#define  CONTROLLER_TASK_PDU_VALUE_CNT_MAX            2
+#define  CONTROLLER_TASK_PDU_SIZE_MIN                 3      
 typedef struct
 {
     uint8_t controller_addr;
     uint8_t scale_addr;
     uint8_t code;
-    uint8_t value[PROTOCOL_TASK_PDU_VALUE_CNT_MAX];
+    uint8_t value[CONTROLLER_TASK_PDU_VALUE_CNT_MAX];
     uint8_t value_cnt;
 }pdu_information_t;
 
@@ -98,7 +106,7 @@ static const uint8_t table_crc_lo[] = {
 * @note
 */
 
-static uint16_t protocol_task_crc16(uint8_t *buffer, uint16_t buffer_length)
+static uint16_t controller_task_crc16(uint8_t *buffer, uint16_t buffer_length)
 {
     uint8_t crc_hi = 0xFF; /* high CRC byte initialized */
     uint8_t crc_lo = 0xFF; /* low CRC byte initialized */
@@ -121,10 +129,10 @@ static uint16_t protocol_task_crc16(uint8_t *buffer, uint16_t buffer_length)
 * @note
 */
 
-static uint8_t protocol_task_rsp_buffer_add_crc16(uint8_t *rsp_buffer,uint8_t size)
+static uint8_t controller_task_rsp_buffer_add_crc16(uint8_t *rsp_buffer,uint8_t size)
 {
     uint16_t crc_calculated;
-    crc_calculated = protocol_task_crc16(rsp_buffer,size);
+    crc_calculated = controller_task_crc16(rsp_buffer,size);
 
     rsp_buffer[size ++] =  crc_calculated >> 8;
     rsp_buffer[size ++] =  crc_calculated & 0xff;
@@ -138,27 +146,66 @@ static uint8_t protocol_task_rsp_buffer_add_crc16(uint8_t *rsp_buffer,uint8_t si
 * @return  > 0 成功净重量的数据长度
 * @note
 */
-static int protocol_task_request_net_weight(const uint8_t addr,int16_t *net_weight)
+static int controller_task_request_configration(uint8_t *value)
 {
+    int rc = -1;
     osStatus   status;
-    osEvent    os_msg;
-    task_msg_t req_msg,rsp_msg;
-    int        rc = -1;
- 
-    req_msg.type = REQ_NET_WEIGHT;
-    req_msg.value = addr;
-    status = osMessagePut(scale_host_task_msg_q_id,*(uint32_t *)&req_msg,PROTOCOL_TASK_MSG_PUT_TIMEOUT_VALUE);
+    osEvent    os_event;
+    task_msg_t req_msg;
+    scale_task_configration_msg_t *rsp_msg;
+   
+    req_msg.type = REQ_CONFIGRATION;
+    status = osMessagePut(scale_task_msg_q_id,*(uint32_t *)&req_msg,CONTROLLER_TASK_MSG_PUT_TIMEOUT_VALUE);
     if (status != osOK) {
         return rc;
     }
- 
-    os_msg = osMessageGet(protocol_task_msg_q_id,PROTOCOL_TASK_MSG_WAIT_TIMEOUT_VALUE);
-    if (os_msg.status == osEventMessage){
-        rsp_msg = *(task_msg_t *)&os_msg.value.v;
-        if (rsp_msg.type == RSP_NET_WEIGHT && rsp_msg.value == SCALE_TASK_SUCCESS) { 
-            rc = copy_net_weight(addr,net_weight);        
+    
+    os_event = osMessageGet(controller_task_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
+    if (os_event.status == osEventMessage){
+        rsp_msg = (scale_task_configration_msg_t *)os_event.value.v;
+        rc = rsp_msg->cnt;
+        for (uint8_t i = 0;i < rsp_msg->cnt;i ++) {
+            value[i] = rsp_msg->scale_addr[i];       
         }
-            
+    }
+ 
+    return rc;
+}
+
+/*
+* @brief 请求净重值
+* @param addr 电子秤地址
+* @param net_weight 净重量值指针
+* @return -1 失败
+* @return  > 0 成功净重量的数据长度
+* @note
+*/
+static int controller_task_request_net_weight(const uint8_t addr,int16_t *net_weight)
+{
+    int rc = -1;
+    osStatus   status;
+    osEvent    os_event;
+    task_msg_t req_msg;
+    scale_task_net_weight_msg_t *rsp_msg;
+   
+    req_msg.type = REQ_NET_WEIGHT;
+    req_msg.reserved = addr;
+    status = osMessagePut(scale_task_msg_q_id,*(uint32_t *)&req_msg,CONTROLLER_TASK_MSG_PUT_TIMEOUT_VALUE);
+    if (status != osOK) {
+        return rc;
+    }
+    rc = 0;
+    os_event = osMessageGet(controller_task_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
+    if (os_event.status == osEventMessage){
+        rsp_msg = (scale_task_net_weight_msg_t *)os_event.value.v;
+        if (rsp_msg->cnt == 1) {
+            *net_weight = rsp_msg->net_weight[rsp_msg->index];
+        } else {
+            for (uint8_t i = 0;i < rsp_msg->cnt;i ++) {
+                net_weight[i] = rsp_msg->net_weight[i];
+            }
+        }
+     rc = rsp_msg->cnt * 2;       
     }
  
     return rc;
@@ -173,27 +220,39 @@ static int protocol_task_request_net_weight(const uint8_t addr,int16_t *net_weig
 * @note
 */
 
-static int protocol_task_request_remove_tar_weight(const uint8_t addr)
+static int controller_task_request_remove_tar_weight(const uint8_t addr)
 {
     osStatus   status;
-    osEvent    os_msg;
-    task_msg_t req_msg,rsp_msg;
+    osEvent    os_event;
+    task_msg_t req_msg;
+    scale_task_opt_msg_t *rsp_msg;
     int        rc = -1;
  
     req_msg.type = REQ_REMOVE_TAR_WEIGHT;
-    req_msg.value = addr;
-    status = osMessagePut(scale_host_task_msg_q_id,*(uint32_t *)&req_msg,PROTOCOL_TASK_MSG_PUT_TIMEOUT_VALUE);
+    req_msg.reserved = addr;
+    status = osMessagePut(scale_task_msg_q_id,*(uint32_t *)&req_msg,CONTROLLER_TASK_MSG_PUT_TIMEOUT_VALUE);
     if (status != osOK) {
         return rc;
     }
  
-    os_msg = osMessageGet(protocol_task_msg_q_id,PROTOCOL_TASK_MSG_WAIT_TIMEOUT_VALUE);
-    if (os_msg.status == osEventMessage){
-        rsp_msg = *(task_msg_t *)&os_msg.value.v;
-        if (rsp_msg.type == RSP_REMOVE_TAR_WEIGHT && rsp_msg.value == SCALE_TASK_SUCCESS) {             
-            rc = 0;                           
+    os_event = osMessageGet(controller_task_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
+    if (os_event.status == osEventMessage){
+        rsp_msg = (scale_task_opt_msg_t *)os_event.value.v;
+        if (rsp_msg->cnt == 1 ) {
+            if (rsp_msg->opt_value[rsp_msg->index] == SCALE_TASK_SUCCESS) {
+                rc = 0;
+            }
+        } else {
+            rc = 0;
+            for (uint8_t i = 0;i < rsp_msg->cnt;i ++) {
+                if (rsp_msg->opt_value[i] == SCALE_TASK_FAILURE) {
+                    rc = -1;
+                    break;
+                }
+            }           
         }
     }
+
     return rc;
 }
 
@@ -205,28 +264,37 @@ static int protocol_task_request_remove_tar_weight(const uint8_t addr)
 * @return  0 成功
 * @note
 */
-sta
-
-static int protocol_task_request_calibration_zero(const uint8_t addr,int16_t weight)
+static int controller_task_request_calibration_zero(const uint8_t addr,int16_t weight)
 {
     osStatus   status;
-    osEvent    os_msg;
-    task_msg_t req_msg,rsp_msg;
+    osEvent    os_event;
+    task_msg_t req_msg;
+    scale_task_opt_msg_t *rsp_msg;
     int        rc = -1;
  
     req_msg.type = REQ_CALIBRATION_ZERO;
     req_msg.value = weight;
     req_msg.reserved = addr;
-    status = osMessagePut(scale_host_task_msg_q_id,*(uint32_t *)&req_msg,PROTOCOL_TASK_MSG_PUT_TIMEOUT_VALUE);
+    status = osMessagePut(scale_task_msg_q_id,*(uint32_t *)&req_msg,CONTROLLER_TASK_MSG_PUT_TIMEOUT_VALUE);
     if (status != osOK) {
         return rc;
     }
  
-    os_msg = osMessageGet(protocol_task_msg_q_id,PROTOCOL_TASK_MSG_WAIT_TIMEOUT_VALUE);
-    if (os_msg.status == osEventMessage){
-        rsp_msg = *(task_msg_t *)&os_msg.value.v;
-        if (rsp_msg.type == RSP_CALIBRATION_ZERO && rsp_msg.value == SCALE_TASK_SUCCESS) {             
-            rc = 0;                           
+    os_event = osMessageGet(controller_task_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
+    if (os_event.status == osEventMessage){
+        rsp_msg = (scale_task_opt_msg_t *)os_event.value.v;
+        if (rsp_msg->cnt == 1 ) {
+            if (rsp_msg->opt_value[rsp_msg->index] == SCALE_TASK_SUCCESS) {
+                rc = 0;
+            }
+        } else {
+            rc = 0;
+            for (uint8_t i = 0;i < rsp_msg->cnt;i ++) {
+                if (rsp_msg->opt_value[i] == SCALE_TASK_FAILURE) {
+                    rc = -1;
+                    break;
+                }
+            }     
         }
     }
     return rc;
@@ -240,26 +308,37 @@ static int protocol_task_request_calibration_zero(const uint8_t addr,int16_t wei
 * @return  0 成功
 * @note
 */
-static int protocol_task_request_calibration_full(const uint8_t addr,int16_t weight)
+static int controller_task_request_calibration_full(const uint8_t addr,int16_t weight)
 {
     osStatus   status;
-    osEvent    os_msg;
-    task_msg_t req_msg,rsp_msg;
+    osEvent    os_event;
+    task_msg_t req_msg;
+    scale_task_opt_msg_t *rsp_msg;
     int        rc = -1;
  
     req_msg.type = REQ_CALIBRATION_FULL;
     req_msg.value = weight;
     req_msg.reserved = addr;
-    status = osMessagePut(scale_host_task_msg_q_id,*(uint32_t *)&req_msg,PROTOCOL_TASK_MSG_PUT_TIMEOUT_VALUE);
+    status = osMessagePut(scale_task_msg_q_id,*(uint32_t *)&req_msg,CONTROLLER_TASK_MSG_PUT_TIMEOUT_VALUE);
     if (status != osOK) {
         return rc;
     }
  
-    os_msg = osMessageGet(protocol_task_msg_q_id,PROTOCOL_TASK_MSG_WAIT_TIMEOUT_VALUE);
-    if (os_msg.status == osEventMessage){
-        rsp_msg = *(task_msg_t *)&os_msg.value.v;
-        if (rsp_msg.type == RSP_CALIBRATION_FULL && rsp_msg.value == SCALE_TASK_SUCCESS) {             
-            rc = 0;                           
+    os_event = osMessageGet(controller_task_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
+    if (os_event.status == osEventMessage){
+        rsp_msg = (scale_task_opt_msg_t *)os_event.value.v;
+        if (rsp_msg->cnt == 1 ) {
+            if (rsp_msg->opt_value[rsp_msg->index] == SCALE_TASK_SUCCESS) {
+                rc = 0;
+            }
+        } else {
+            rc = 0;
+            for (uint8_t i = 0;i < rsp_msg->cnt;i ++) {
+                if (rsp_msg->opt_value[i] == SCALE_TASK_FAILURE) {
+                    rc = -1;
+                    break;
+                }
+            }     
         }
     }
     return rc;
@@ -273,28 +352,11 @@ static int protocol_task_request_calibration_full(const uint8_t addr,int16_t wei
 * @note
 */
 
-static int protocol_task_request_firmware_version(uint32_t *fw_version)
+static int controller_task_request_firmware_version(uint32_t *fw_version)
 {
-    osStatus   status;
-    osEvent    os_msg;
-    task_msg_t req_msg,rsp_msg;
-    int        rc = -1;
- 
-    req_msg.type = REQ_FIRMWARE_VERSION;
-    status = osMessagePut(scale_host_task_msg_q_id,*(uint32_t *)&req_msg,PROTOCOL_TASK_MSG_PUT_TIMEOUT_VALUE);
-    if (status != osOK) {
-        return rc;
-    }
- 
-    os_msg = osMessageGet(protocol_task_msg_q_id,PROTOCOL_TASK_MSG_WAIT_TIMEOUT_VALUE);
-    if (os_msg.status == osEventMessage){
-        rsp_msg = *(task_msg_t *)&os_msg.value.v;
-        if (rsp_msg.type == RSP_FIRMWARE_VERSION && rsp_msg.value == SCALE_TASK_SUCCESS) {         
-            *fw_version = (uint32_t)rsp_msg.value << 8 | rsp_msg.reserved;
-            rc = 0;                           
-        }
-    }
-    return rc;
+    *fw_version = FIRMWARE_VERSION_HEX;
+
+    return 0;
 }
 
 /*
@@ -307,34 +369,34 @@ static int protocol_task_request_firmware_version(uint32_t *fw_version)
 * @return  0 成功
 * @note
 */
-static int protocol_task_receive_adu(int handle,uint8_t *adu,uint32_t wait_timeout,uint32_t frame_timeout)
+static int controller_task_receive_adu(int handle,uint8_t *adu,uint32_t wait_timeout,uint32_t frame_timeout)
 {
     int rc;
     int length_to_read,read_length = 0;
     uint32_t timeout;
     uint16_t crc_calculated;
     uint16_t crc_received;
-    protocol_step_t step;
+    controller_step_t step;
 
     timeout = wait_timeout;
     length_to_read = 2;
     read_length = 0;
-    step = PROTOCOL_TASK_ADU_HEAD_STEP;
+    step = CONTROLLER_TASK_ADU_HEAD_STEP;
   
     while(length_to_read != 0) {
         rc = serial_select(handle,timeout);
         if (rc == -1) {
-            log_error("protocol select error.read_len:%d. len_to_read:%d.\r\n",read_length,length_to_read);
+            log_error("controller select error.read_len:%d. len_to_read:%d.\r\n",read_length,length_to_read);
             goto exit;
         }
         if (rc == 0) {
-            log_error("protocol select timeout.read_len:%d. len_to_read:%d.timeout:%d.\r\n",read_length,length_to_read,timeout);
+            log_error("controller select timeout.read_len:%d. len_to_read:%d.timeout:%d.\r\n",read_length,length_to_read,timeout);
             goto exit;
         }
   
         rc = serial_read(handle,(char *)adu + read_length,length_to_read);
         if (rc == -1) {
-            log_error("protocol read error.read_len:%d. len_to_read:%d.\r\n",adu,length_to_read);
+            log_error("controller read error.read_len:%d. len_to_read:%d.\r\n",adu,length_to_read);
             goto exit;
         }
    
@@ -349,35 +411,35 @@ static int protocol_task_receive_adu(int handle,uint8_t *adu,uint32_t wait_timeo
         if (length_to_read == 0) {
             switch(step){
             /*接收到了协议头和数据长度域*/
-            case PROTOCOL_TASK_ADU_HEAD_STEP:
-                if (adu[PROTOCOL_TASK_ADU_HEAD_OFFSET]     == PROTOCOL_TASK_ADU_HEAD0_VALUE && \
-                    adu[PROTOCOL_TASK_ADU_HEAD_OFFSET + 1] == PROTOCOL_TASK_ADU_HEAD1_VALUE) {
-                    step = PROTOCOL_TASK_PDU_STEP;      
-                    length_to_read = adu[PROTOCOL_TASK_ADU_PDU_LEN_OFFSET];
+            case CONTROLLER_TASK_ADU_HEAD_STEP:
+                if (adu[CONTROLLER_TASK_ADU_HEAD_OFFSET]     == CONTROLLER_TASK_ADU_HEAD0_VALUE && \
+                    adu[CONTROLLER_TASK_ADU_HEAD_OFFSET + 1] == CONTROLLER_TASK_ADU_HEAD1_VALUE) {
+                    step = CONTROLLER_TASK_PDU_STEP;      
+                    length_to_read = adu[CONTROLLER_TASK_ADU_PDU_LEN_OFFSET];
                     if (length_to_read == 0){
-                        log_error("protocol err in len value:%d.\r\n",adu[PROTOCOL_TASK_ADU_PDU_LEN_OFFSET]);
+                        log_error("controller err in len value:%d.\r\n",adu[CONTROLLER_TASK_ADU_PDU_LEN_OFFSET]);
                         rc = -1;
                         goto exit;
                     }
                     timeout = frame_timeout;
                 } else {
-                    log_error("protocol err in head value0:%d value1:%d.\r\n",adu[PROTOCOL_TASK_ADU_HEAD_OFFSET],adu[PROTOCOL_TASK_ADU_HEAD_OFFSET + 1]);
+                    log_error("controller err in head value0:%d value1:%d.\r\n",adu[CONTROLLER_TASK_ADU_HEAD_OFFSET],adu[CONTROLLER_TASK_ADU_HEAD_OFFSET + 1]);
                     rc = -1;
                     goto exit;
                 } 
                                                                     
                 break;
             /*接收完成了PDU的数据*/
-            case PROTOCOL_TASK_PDU_STEP:
-                step = PROTOCOL_TASK_ADU_CRC_STEP;      
-                length_to_read = PROTOCOL_TASK_ADU_CRC_LEN;
+            case CONTROLLER_TASK_PDU_STEP:
+                step = CONTROLLER_TASK_ADU_CRC_STEP;      
+                length_to_read = CONTROLLER_TASK_ADU_CRC_LEN;
             break;
             /*接收完成了全部的数据*/
-            case PROTOCOL_TASK_ADU_CRC_STEP:
-                crc_calculated = protocol_task_crc16(adu,read_length - PROTOCOL_TASK_ADU_CRC_LEN);
-                crc_received = adu[read_length - PROTOCOL_TASK_ADU_CRC_LEN]<< 8 | adu[read_length - PROTOCOL_TASK_ADU_CRC_LEN - 1];
+            case CONTROLLER_TASK_ADU_CRC_STEP:
+                crc_calculated = controller_task_crc16(adu,read_length - CONTROLLER_TASK_ADU_CRC_LEN);
+                crc_received = adu[read_length - CONTROLLER_TASK_ADU_CRC_LEN]<< 8 | adu[read_length - CONTROLLER_TASK_ADU_CRC_LEN - 1];
                 if (crc_calculated != crc_received) {
-                    log_error("protocol err in crc.recv:%d calculate:%d.\r\n",crc_received,crc_calculated);
+                    log_error("controller err in crc.recv:%d calculate:%d.\r\n",crc_received,crc_calculated);
                     rc = -1;
                     goto exit;
                 } else {
@@ -386,7 +448,7 @@ static int protocol_task_receive_adu(int handle,uint8_t *adu,uint32_t wait_timeo
                 }
             break;
             default:
-                log_error("protocol internal err.\r\n");
+                log_error("controller internal err.\r\n");
                 rc = -1;
                 goto exit;
             }
@@ -405,12 +467,12 @@ exit:
 * @return adu长度
 * @note
 */
-static uint8_t protocol_task_build_rsp_adu(uint8_t *adu,const pdu_information_t *pdu_info,const uint8_t *value,const uint8_t cnt)
+static uint8_t controller_task_build_rsp_adu(uint8_t *adu,const pdu_information_t *pdu_info,const uint8_t *value,const uint8_t cnt)
 {
     uint8_t adu_length = 0;
     /*ADU head*/
-    adu[adu_length ++] = PROTOCOL_TASK_ADU_HEAD0_VALUE;
-    adu[adu_length ++] = PROTOCOL_TASK_ADU_HEAD1_VALUE;
+    adu[adu_length ++] = CONTROLLER_TASK_ADU_HEAD0_VALUE;
+    adu[adu_length ++] = CONTROLLER_TASK_ADU_HEAD1_VALUE;
     /*ADU addr*/
     adu[adu_length ++] = pdu_info->controller_addr;
     /*PDU len*/
@@ -423,7 +485,7 @@ static uint8_t protocol_task_build_rsp_adu(uint8_t *adu,const pdu_information_t 
     for (uint8_t i = 0;i < cnt;i ++) {
          adu[adu_length ++] = value[i];
     }
-    adu_length = protocol_task_rsp_buffer_add_crc16(adu,adu_length);
+    adu_length = controller_task_rsp_buffer_add_crc16(adu,adu_length);
 
     return adu_length;
 }
@@ -438,26 +500,26 @@ static uint8_t protocol_task_build_rsp_adu(uint8_t *adu,const pdu_information_t 
 * @return  0 成功
 * @note
 */
-static int protocol_task_pdu_code_check(const uint8_t code,const uint8_t value_cnt)
+static int controller_task_pdu_code_check(const uint8_t code,const uint8_t value_cnt)
 {
-    if (code > PROTOCOL_TASK_PDU_CODE_MAX) {
+    if (code > CONTROLLER_TASK_PDU_CODE_MAX) {
         log_error("pdu code:%d unknow err.\r\n",code);
         return -1;
     }
 
-    if (code == PROTOCOL_TASK_PDU_CODE_CONFIGRATION && value_cnt != 0){
+    if (code == CONTROLLER_TASK_PDU_CODE_CONFIGRATION && value_cnt != 0){
         log_error("pdu configration value cnt:%d != 0 err.\r\n",value_cnt);
         return -1;
-    }else if (code == PROTOCOL_TASK_PDU_CODE_NET_WEIGHT && value_cnt != 0) {
+    }else if (code == CONTROLLER_TASK_PDU_CODE_NET_WEIGHT && value_cnt != 0) {
         log_error("pdu net weight value cnt:%d != 0 err.\r\n",value_cnt);
         return -1;
-    }else if (code == PROTOCOL_TASK_PDU_CODE_REMOVE_TAR_WEIGHT && value_cnt != 0) {
+    }else if (code == CONTROLLER_TASK_PDU_CODE_REMOVE_TAR_WEIGHT && value_cnt != 0) {
         log_error("pdu remove tar weight value cnt:%d != 0 err.\r\n",value_cnt);
         return -1;
-    }else if (code == PROTOCOL_TASK_PDU_CODE_CALIBRATION_ZERO && value_cnt != 2) {
+    }else if (code == CONTROLLER_TASK_PDU_CODE_CALIBRATION_ZERO && value_cnt != 2) {
         log_error("pdu calibration zero value cnt:%d != 2 err.\r\n",value_cnt);
         return -1;
-    }else if (code == PROTOCOL_TASK_PDU_CODE_CALIBRATION_FULL && value_cnt != 2) {
+    }else if (code == CONTROLLER_TASK_PDU_CODE_CALIBRATION_FULL && value_cnt != 2) {
         log_error("pdu calibration full value cnt:%d != 2 err.\r\n",value_cnt);
         return -1;
     }
@@ -472,34 +534,34 @@ static int protocol_task_pdu_code_check(const uint8_t code,const uint8_t value_c
 * @return 
 * @note
 */
-static int protocol_task_parse_pdu(const uint8_t *pdu,uint8_t size,pdu_information_t *pdu_info)
+static int controller_task_parse_pdu(const uint8_t *pdu,uint8_t size,pdu_information_t *pdu_info)
 {
     int rc;
 
-    if (size < PROTOCOL_TASK_PDU_SIZE_MIN) {
-        log_error("pdu size:%d < %d err.\r\n",size,PROTOCOL_TASK_PDU_SIZE_MIN);
+    if (size < CONTROLLER_TASK_PDU_SIZE_MIN) {
+        log_error("pdu size:%d < %d err.\r\n",size,CONTROLLER_TASK_PDU_SIZE_MIN);
         return -1;
     }
-    pdu_info->controller_addr = pdu[PROTOCOL_TASK_PDU_CONTROLLER_ADDR_OFFSET];
-    if (pdu_info->controller_addr != PROTOCOL_TASK_CONTROLLER_ADDR) {
-        log_error("pdu controller addr:%d != %d err.\r\n",pdu_info->controller_addr,PROTOCOL_TASK_CONTROLLER_ADDR);
+    pdu_info->controller_addr = pdu[CONTROLLER_TASK_PDU_CONTROLLER_ADDR_OFFSET];
+    if (pdu_info->controller_addr != CONTROLLER_TASK_CONTROLLER_ADDR) {
+        log_error("pdu controller addr:%d != %d err.\r\n",pdu_info->controller_addr,CONTROLLER_TASK_CONTROLLER_ADDR);
         return -1;
     }
-    pdu_info->code = pdu[PROTOCOL_TASK_PDU_CODE_OFFSET];
-    if (pdu_info->code > PROTOCOL_TASK_PDU_CODE_MAX) {
-        log_error("pdu code:%d > %d err.\r\n",pdu_info->code,PROTOCOL_TASK_PDU_CODE_MAX);
+    pdu_info->code = pdu[CONTROLLER_TASK_PDU_CODE_OFFSET];
+    if (pdu_info->code > CONTROLLER_TASK_PDU_CODE_MAX) {
+        log_error("pdu code:%d > %d err.\r\n",pdu_info->code,CONTROLLER_TASK_PDU_CODE_MAX);
         return -1;
     }
-    pdu_info->scale_addr = pdu[PROTOCOL_TASK_PDU_SCALE_ADDR_OFFSET];
+    pdu_info->scale_addr = pdu[CONTROLLER_TASK_PDU_SCALE_ADDR_OFFSET];
     pdu_info->value_cnt = size - 3;
-    rc = protocol_task_pdu_code_check(pdu_info->code,pdu_info->value_cnt);
+    rc = controller_task_pdu_code_check(pdu_info->code,pdu_info->value_cnt);
     if (rc != 0) {
         log_error("pdu code check err.\r\n");
         return -1; 
     }
 
     for (uint8_t i = 0;i < pdu_info->value_cnt;i ++) {
-        pdu_info->value[i] = pdu[PROTOCOL_TASK_PDU_VALUE_OFFSET + i];
+        pdu_info->value[i] = pdu[CONTROLLER_TASK_PDU_VALUE_OFFSET + i];
     }
     return 0;
 }
@@ -513,62 +575,70 @@ static int protocol_task_parse_pdu(const uint8_t *pdu,uint8_t size,pdu_informati
 * @note
 */
 
-static int protocol_task_process_pdu_info(pdu_information_t *pdu_info,uint8_t *value,uint8_t *value_cnt)
+static int controller_task_process_pdu_info(pdu_information_t *pdu_info,uint8_t *value,uint8_t *value_cnt)
 {
     int rc;
 
     int16_t calibration_weight;
     switch (pdu_info->code) {
-    case PROTOCOL_TASK_PDU_CODE_NET_WEIGHT:
-        rc = protocol_task_request_net_weight(pdu_info->scale_addr,(int16_t *)value);
-        if (rc != 0) {
+        case CONTROLLER_TASK_PDU_CODE_CONFIGRATION:
+        rc = controller_task_request_configration(value);
+        if (rc <= 0) {
+            log_error("req configration weight err.\r\n");
+            goto err_exit;
+        } 
+        *value_cnt = rc;
+        break;
+    case CONTROLLER_TASK_PDU_CODE_NET_WEIGHT:
+        rc = controller_task_request_net_weight(pdu_info->scale_addr,(int16_t *)value);
+        if (rc <= 0) {
             log_error("req net weight err.\r\n");
             goto err_exit;
         } 
         *value_cnt = rc;
         break;
-     case PROTOCOL_TASK_PDU_CODE_REMOVE_TAR_WEIGHT:
-        rc = protocol_task_request_remove_tar_weight(pdu_info->scale_addr);
+     case CONTROLLER_TASK_PDU_CODE_REMOVE_TAR_WEIGHT:
+        rc = controller_task_request_remove_tar_weight(pdu_info->scale_addr);
         *value_cnt = 1;
         if (rc == 0) {
-            value[0] = PROTOCOL_TASK_SUCCESS_VALUE;
+            value[0] = CONTROLLER_TASK_SUCCESS_VALUE;
         } else {
             log_error("req remove tar weight fail.\r\n");
-            value[0] = PROTOCOL_TASK_FAILURE_VALUE;
+            value[0] = CONTROLLER_TASK_FAILURE_VALUE;
         }
         break;   
-     case PROTOCOL_TASK_PDU_CODE_CALIBRATION_ZERO:
+     case CONTROLLER_TASK_PDU_CODE_CALIBRATION_ZERO:
         calibration_weight = pdu_info->value[1] << 8 | pdu_info->value[0];
         *value_cnt = 1;
-        rc = protocol_task_request_calibration_zero(pdu_info->scale_addr,calibration_weight);
+        rc = controller_task_request_calibration_zero(pdu_info->scale_addr,calibration_weight);
         if (rc == 0) {
-            value[0] = PROTOCOL_TASK_SUCCESS_VALUE;
+            value[0] = CONTROLLER_TASK_SUCCESS_VALUE;
         } else {
             log_error("req calibration zero fail.\r\n");
-            value[0] = PROTOCOL_TASK_FAILURE_VALUE;
+            value[0] = CONTROLLER_TASK_FAILURE_VALUE;
         }
         break;  
-     case PROTOCOL_TASK_PDU_CODE_CALIBRATION_FULL:
+     case CONTROLLER_TASK_PDU_CODE_CALIBRATION_FULL:
         calibration_weight = pdu_info->value[1] << 8 | pdu_info->value[0];
         *value_cnt = 1;
-        rc = protocol_task_request_calibration_full(pdu_info->scale_addr,calibration_weight);
+        rc = controller_task_request_calibration_full(pdu_info->scale_addr,calibration_weight);
         if (rc == 0) {
-            value[0] = PROTOCOL_TASK_SUCCESS_VALUE;
+            value[0] = CONTROLLER_TASK_SUCCESS_VALUE;
         } else {
             log_error("req calibration full fail.\r\n");
-            value[0] = PROTOCOL_TASK_FAILURE_VALUE;
+            value[0] = CONTROLLER_TASK_FAILURE_VALUE;
         }
         break;  
-     case PROTOCOL_TASK_PDU_CODE_FIRMWARE_VERSION:
+     case CONTROLLER_TASK_PDU_CODE_FIRMWARE_VERSION:
         *value_cnt = 3;
-        rc = protocol_task_request_firmware_version((uint32_t *)value);
+        rc = controller_task_request_firmware_version((uint32_t *)value);
         if (rc != 0) {
             log_error("req firmware version err.\r\n");
             goto err_exit;
         }
         break; 
     default:
-        log_error("protocol internal err.code:%d.\r\n",pdu_info->code);
+        log_error("controller internal err.code:%d.\r\n",pdu_info->code);
         goto err_exit;
     }
     return 0;
@@ -590,7 +660,7 @@ err_exit:
 * @return  0 成功 
 * @note
 */
-static int protocol_task_send_rsp_adu(int handle,uint8_t *adu,uint8_t size,uint32_t timeout)
+static int controller_task_send_rsp_adu(int handle,uint8_t *adu,uint8_t size,uint32_t timeout)
 {
     uint8_t write_length,remain_length;
 
@@ -599,13 +669,13 @@ static int protocol_task_send_rsp_adu(int handle,uint8_t *adu,uint8_t size,uint3
         log_debug("[%2X]\r\n",adu[i]);
     }
     if (size != write_length){
-        log_error("protocol err in  serial buffer write. expect:%d write:%d.\r\n",size,write_length); 
+        log_error("controller err in  serial buffer write. expect:%d write:%d.\r\n",size,write_length); 
         return -1;      
      }
     
     remain_length = serial_complete(handle,timeout);
     if (remain_length != 0){
-       log_error("protocol err in  serial send timeout.\r\n",); 
+       log_error("controller err in  serial send timeout.\r\n",); 
        return -1;  
     }
 
@@ -619,57 +689,51 @@ static int protocol_task_send_rsp_adu(int handle,uint8_t *adu,uint8_t size,uint3
 * @return 无
 * @note
 */       
-void protocol_task(void const * argument)
+void controller_task(void const * argument)
 {
     int rc; 
     uint8_t adu_size;
-    uint8_t recv_adu[PROTOCOL_TASK_FRAME_SIZE_MAX];
-    uint8_t rsp_adu[PROTOCOL_TASK_FRAME_SIZE_MAX];
+    uint8_t recv_adu[CONTROLLER_TASK_FRAME_SIZE_MAX];
+    uint8_t rsp_adu[CONTROLLER_TASK_FRAME_SIZE_MAX];
     pdu_information_t pdu_info;
-    uint8_t value[PROTOCOL_TASK_PDU_VALUE_CNT_MAX];
+    uint8_t value[CONTROLLER_TASK_PDU_VALUE_CNT_MAX];
     uint8_t value_cnt;
-
-    osMessageQDef(protocol_task_msg_q,1,uint32_t);
-    protocol_task_msg_q_id = osMessageCreate(osMessageQ(protocol_task_msg_q),protocol_task_hdl);
-    log_assert(protocol_task_msg_q_id); 
  
-    rc = serial_create(&protocol_serial_handle,PROTOCOL_TASK_RX_BUFFER_SIZE,PROTOCOL_TASK_TX_BUFFER_SIZE);
+    rc = serial_create(&controller_serial_handle,CONTROLLER_TASK_RX_BUFFER_SIZE,CONTROLLER_TASK_TX_BUFFER_SIZE);
     log_assert(rc == 0);
-    rc = serial_register_hal_driver(protocol_serial_handle,&nxp_serial_uart_hal_driver);
+    rc = serial_register_hal_driver(controller_serial_handle,&nxp_serial_uart_hal_driver);
     log_assert(rc == 0);
  
-    rc = serial_open(protocol_serial_handle,
-                    PROTOCOL_TASK_SERIAL_PORT,
-                    PROTOCOL_TASK_SERIAL_BAUDRATES,
-                    PROTOCOL_TASK_SERIAL_DATABITS,
-                    PROTOCOL_TASK_SERIAL_STOPBITS);
+    rc = serial_open(controller_serial_handle,
+                    CONTROLLER_TASK_SERIAL_PORT,
+                    CONTROLLER_TASK_SERIAL_BAUDRATES,
+                    CONTROLLER_TASK_SERIAL_DATABITS,
+                    CONTROLLER_TASK_SERIAL_STOPBITS);
     log_assert(rc == 0); 
  
-    /*等待任务同步*/
-    xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_PROTOCOL_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
-    log_debug("protocol task sync ok.\r\n");
+    log_debug("controller task sync ok.\r\n");
     while (1) {
         /*清空接收缓存*/
-        serial_flush(protocol_serial_handle);
+        serial_flush(controller_serial_handle);
         /*接收主机发送的adu*/
-        rc = protocol_task_receive_adu(protocol_serial_handle,(uint8_t *)recv_adu,PROTOCOL_TASK_WAIT_TIMEOUT_VALUE,PROTOCOL_TASK_FRAME_TIMEOUT_VALUE);
+        rc = controller_task_receive_adu(controller_serial_handle,(uint8_t *)recv_adu,CONTROLLER_TASK_WAIT_TIMEOUT_VALUE,CONTROLLER_TASK_FRAME_TIMEOUT_VALUE);
         if (rc < 0) {
             continue;
         }
         /*解析pdu*/
-        rc = protocol_task_parse_pdu((uint8_t *)&recv_adu[PROTOCOL_TASK_ADU_PDU_OFFSET],rc - PROTOCOL_TASK_ADU_HEAD_LEN - PROTOCOL_TASK_ADU_CRC_LEN,&pdu_info);
+        rc = controller_task_parse_pdu((uint8_t *)&recv_adu[CONTROLLER_TASK_ADU_PDU_OFFSET],rc - CONTROLLER_TASK_ADU_HEAD_LEN - CONTROLLER_TASK_ADU_CRC_LEN,&pdu_info);
         if (rc < 0) {
             continue;
         }
         /*处理pdu信息*/
-        rc = protocol_task_process_pdu_info(&pdu_info,value,&value_cnt);
+        rc = controller_task_process_pdu_info(&pdu_info,value,&value_cnt);
         if ( rc < 0) {  
             continue;
         }
         /*构建处理结果的回应*/
-        adu_size = protocol_task_build_rsp_adu(rsp_adu,&pdu_info,value,value_cnt);
+        adu_size = controller_task_build_rsp_adu(rsp_adu,&pdu_info,value,value_cnt);
         /*回应主机处理结果*/
-        rc = protocol_task_send_rsp_adu(protocol_serial_handle,rsp_adu,adu_size,PROTOCOL_TASK_SEND_TIMEOUT);
+        rc = controller_task_send_rsp_adu(controller_serial_handle,rsp_adu,adu_size,CONTROLLER_TASK_SEND_TIMEOUT);
         if (rc < 0) {
             continue;
         }

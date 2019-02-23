@@ -2147,10 +2147,10 @@
             <group>
                 <name>tasks</name>
                 <file>
-                    <name>$PROJ_DIR$\..\user\tasks\cpu_task.c</name>
+                    <name>$PROJ_DIR$\..\user\tasks\controller_task.c</name>
                 </file>
                 <file>
-                    <name>$PROJ_DIR$\..\user\tasks\protocol_task.c</name>
+                    <name>$PROJ_DIR$\..\user\tasks\cpu_task.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\user\tasks\scale_task.c</name>

@@ -41,141 +41,53 @@
 /*数据灯*/
 static void bsp_data_stream_led_pin_init()
 {
-  gpio_pin_config_t pin;
-  pin.pinDirection = kGPIO_DigitalOutput;
-  pin.outputLogic = 0;
-  GPIO_PortInit(DATA_STREAM_LED_GPIO, DATA_STREAM_LED_PORT);
-  GPIO_PinInit(DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,DATA_STREAM_LED_PIN,&pin);
+    gpio_pin_config_t pin;
+    pin.pinDirection = kGPIO_DigitalOutput;
+    pin.outputLogic = 0;
+    GPIO_PortInit(DATA_STREAM_LED_GPIO, DATA_STREAM_LED_PORT);
+    GPIO_PinInit(DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,DATA_STREAM_LED_PIN,&pin);
 }
 /*系统运行灯*/
 static void bsp_sys_led_pin_init()
 {
-  gpio_pin_config_t pin;
-  pin.pinDirection = kGPIO_DigitalOutput;
-  pin.outputLogic = 1;
-  GPIO_PortInit(SYS_LED_GPIO, SYS_LED_PORT);
-  GPIO_PinInit(SYS_LED_GPIO,SYS_LED_PORT,SYS_LED_PIN,&pin);
-}
-/*锁开关控制端*/
-static void bsp_lock_ctrl_pin_init()
-{
-  gpio_pin_config_t pin;
-  pin.pinDirection = kGPIO_DigitalOutput;
-  pin.outputLogic = 0;
-  GPIO_PortInit(LOCK_CTRL_GPIO, LOCK_CTRL_PORT);
-  GPIO_PinInit(LOCK_CTRL_GPIO,LOCK_CTRL_PORT,LOCK_CTRL_PIN,&pin);
-}
-/*锁舌传感器*/
-static void bsp_lock_sensor_pin_init()
-{
-  gpio_pin_config_t pin;
-  pin.pinDirection = kGPIO_DigitalInput;
-  pin.outputLogic = 1;
-  GPIO_PortInit(LOCK_SENSOR_GPIO, LOCK_SENSOR_PORT);
-  GPIO_PinInit(LOCK_SENSOR_GPIO,LOCK_SENSOR_PORT,LOCK_SENSOR_PIN,&pin);
-}
-
-/*锁孔内传感器*/
-static void bsp_lock_hole_sensor_pin_init()
-{
-  gpio_pin_config_t pin;
-  pin.pinDirection = kGPIO_DigitalInput;
-  pin.outputLogic = 1;
-  GPIO_PortInit(LOCK_HOLE_SENSOR_GPIO, LOCK_HOLE_SENSOR_PORT);
-  GPIO_PinInit(LOCK_HOLE_SENSOR_GPIO,LOCK_HOLE_SENSOR_PORT,LOCK_HOLE_SENSOR_PIN,&pin);
-}
-/*门磁传感器*/
-static void bsp_door_sensor_pin_init()
-{
-  gpio_pin_config_t pin;
-  pin.pinDirection = kGPIO_DigitalInput;
-  pin.outputLogic = 1;
-  GPIO_PortInit(DOOR_SENSOR_GPIO, DOOR_SENSOR_PORT);
-  GPIO_PinInit(DOOR_SENSOR_GPIO,DOOR_SENSOR_PORT,DOOR_SENSOR_PIN,&pin);
-}
-/*锁相关*/
-void bsp_lock_ctrl_open()
-{
- GPIO_PortSet(LOCK_CTRL_GPIO,LOCK_CTRL_PORT,(1U<<LOCK_CTRL_PIN));
-}
-
-void bsp_lock_ctrl_close()
-{
- GPIO_PortClear( LOCK_CTRL_GPIO,LOCK_CTRL_PORT,(1U<<LOCK_CTRL_PIN));
-}
-/*锁舌传感器相关*/
-uint8_t bsp_lock_sensor_status()
-{
- uint8_t pin_level,status;
- pin_level = GPIO_PinRead(LOCK_SENSOR_GPIO,LOCK_SENSOR_PORT,LOCK_SENSOR_PIN);
- if(pin_level == BSP_LOCK_OPEN_LEVEL){
-   status = BSP_LOCK_STATUS_OPEN;
- }else{
-   status = BSP_LOCK_STATUS_CLOSE;
- }
- return status;
-}
-
-/*锁孔传感器相关*/
-uint8_t bsp_lock_hole_sensor_status()
-{
- uint8_t pin_level,status;
- pin_level = GPIO_PinRead(LOCK_HOLE_SENSOR_GPIO,LOCK_HOLE_SENSOR_PORT,LOCK_HOLE_SENSOR_PIN);
- if(pin_level == BSP_LOCK_HOLE_OPEN_LEVEL){
-   status = BSP_LOCK_HOLE_STATUS_OPEN;
- }else{
-   status = BSP_LOCK_HOLE_STATUS_CLOSE;
- }
- return status;
-}
-/*门磁传感器*/
-uint8_t bsp_door_sensor_status()
-{
- uint8_t pin_level,status;
- pin_level = GPIO_PinRead(DOOR_SENSOR_GPIO,DOOR_SENSOR_PORT,DOOR_SENSOR_PIN);
- if(pin_level == BSP_DOOR_OPEN_LEVEL){
-   status = BSP_DOOR_STATUS_OPEN;
- }else{
-   status = BSP_DOOR_STATUS_CLOSE;
- }
- return status;
+    gpio_pin_config_t pin;
+    pin.pinDirection = kGPIO_DigitalOutput;
+    pin.outputLogic = 1;
+    GPIO_PortInit(SYS_LED_GPIO, SYS_LED_PORT);
+    GPIO_PinInit(SYS_LED_GPIO,SYS_LED_PORT,SYS_LED_PIN,&pin);
 }
 
 /*数据灯相关*/
 void bsp_data_stream_led_toggle()
 {
- GPIO_PortToggle(DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,(1<<DATA_STREAM_LED_PIN));
+    GPIO_PortToggle(DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,(1<<DATA_STREAM_LED_PIN));
 }
 
 void bsp_data_stream_led_on()
 {
- GPIO_PortSet(DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,(1U<<DATA_STREAM_LED_PIN));
+    GPIO_PortSet(DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,(1U<<DATA_STREAM_LED_PIN));
 }
 
 void bsp_data_stream_led_off()
 {
- GPIO_PortClear( DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,(1U<<DATA_STREAM_LED_PIN));
+    GPIO_PortClear( DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,(1U<<DATA_STREAM_LED_PIN));
 }
 
 void bsp_sys_led_toggle()
 {
- GPIO_PortToggle(SYS_LED_GPIO,SYS_LED_PORT,(1<<SYS_LED_PIN));
+    GPIO_PortToggle(SYS_LED_GPIO,SYS_LED_PORT,(1<<SYS_LED_PIN));
 }
 
 /*板级初始化*/
 int bsp_board_init()
 {
-bsp_data_stream_led_pin_init();
-bsp_sys_led_pin_init();
-bsp_lock_ctrl_pin_init();
-bsp_lock_sensor_pin_init();
-bsp_lock_hole_sensor_pin_init();
-bsp_door_sensor_pin_init();
+    bsp_data_stream_led_pin_init();
+    bsp_sys_led_pin_init();
 
-BOARD_InitBootPins();
-BOARD_BootClockPLL180M();
+    BOARD_InitBootPins();
+    BOARD_BootClockPLL180M();
 
-return 0;
+    return 0;
 }
 
 
