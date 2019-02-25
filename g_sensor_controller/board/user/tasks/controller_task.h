@@ -12,7 +12,7 @@ extern osMessageQId controller_task_calibration_full_msg_q_id;
 void controller_task(void const * argument);
 
 
-#define  CONTROLLER_TASK_SERIAL_PORT                 4
+#define  CONTROLLER_TASK_SERIAL_PORT                 3
 #define  CONTROLLER_TASK_SERIAL_BAUDRATES            115200
 #define  CONTROLLER_TASK_SERIAL_DATABITS             8
 #define  CONTROLLER_TASK_SERIAL_STOPBITS             1
@@ -34,6 +34,7 @@ void controller_task(void const * argument);
 #define  CONTROLLER_TASK_ADU_HEAD1_VALUE             'L'
 #define  CONTROLLER_TASK_ADU_HEAD_LEN                2
 #define  CONTROLLER_TASK_ADU_PDU_LEN_OFFSET          2
+#define  CONTROLLER_TASK_ADU_PDU_LEN_LEN             1
 #define  CONTROLLER_TASK_ADU_PDU_OFFSET              3
 /*协议PDU*/
 #define  CONTROLLER_TASK_PDU_CONTROLLER_ADDR_OFFSET  0

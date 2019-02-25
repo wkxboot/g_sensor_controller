@@ -44,12 +44,12 @@ int utils_timer_init(utils_timer_t *timer,uint32_t timeout,bool up)
 *  功能：定时器现在的值
 *  返回：>=0：现在时间值 其他：失败
 */ 
-int utils_timer_value(utils_timer_t *timer)
+uint32_t utils_timer_value(utils_timer_t *timer)
 {
     uint32_t time_elapse;
 
     if (timer == NULL){
-        return -1;
+        return 0;
     }  
     time_elapse = osKernelSysTick() - timer->start; 
 

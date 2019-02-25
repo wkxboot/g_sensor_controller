@@ -19,6 +19,7 @@ osThreadId   cpu_task_hdl;
 void cpu_task(void const * argument)
 {
     char cmd[20];
+    uint8_t level;
     uint8_t read_cnt;
 
     while (1) {
@@ -26,10 +27,14 @@ void cpu_task(void const * argument)
         bsp_sys_led_toggle();
         osDelay(250); 
  
-        read_cnt = log_read(cmd,20);
-        if (read_cnt == 2) {
-            log_debug("hello.\r\n");
-        }
+        
+    /*设置日志输出等级*/
+    read_cnt = log_read(cmd,19);
+    cmd[read_cnt] = 0;
+    if (strncmp(cmd,"set level ",strlen("set level ")) == 0) {
+        level = atoi(cmd + strlen("set level "));
+        log_set_level(level);
+    }
  
  
     }

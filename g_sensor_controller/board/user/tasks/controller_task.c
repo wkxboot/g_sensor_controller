@@ -9,7 +9,7 @@
 
 int controller_serial_handle;
 extern serial_hal_driver_t nxp_serial_uart_hal_driver;
-
+extern void nxp_serial_uart_hal_isr(int handle);
 osThreadId   controller_task_hdl;
 osMessageQId controller_task_msg_q_id;
 
@@ -27,8 +27,8 @@ typedef enum
     CONTROLLER_TASK_ADU_CRC_STEP
 }controller_step_t;
 
-#define  CONTROLLER_TASK_PDU_VALUE_CNT_MAX            2
-#define  CONTROLLER_TASK_PDU_SIZE_MIN                 3      
+#define  CONTROLLER_TASK_PDU_VALUE_CNT_MAX            6
+#define  CONTROLLER_TASK_PDU_SIZE_MIN                 2      
 typedef struct
 {
     uint8_t controller_addr;
@@ -134,10 +134,11 @@ static uint8_t controller_task_rsp_buffer_add_crc16(uint8_t *rsp_buffer,uint8_t 
     uint16_t crc_calculated;
     crc_calculated = controller_task_crc16(rsp_buffer,size);
 
-    rsp_buffer[size ++] =  crc_calculated >> 8;
-    rsp_buffer[size ++] =  crc_calculated & 0xff;
+    rsp_buffer[size ++] = crc_calculated & 0xff;
+    rsp_buffer[size ++] = crc_calculated >> 8;
     return size;
 }
+
 /*
 * @brief 请求净重值
 * @param addr 电子秤地址
@@ -160,7 +161,7 @@ static int controller_task_request_configration(uint8_t *value)
         return rc;
     }
     
-    os_event = osMessageGet(controller_task_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
+    os_event = osMessageGet(controller_task_cfg_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
     if (os_event.status == osEventMessage){
         rsp_msg = (scale_task_configration_msg_t *)os_event.value.v;
         rc = rsp_msg->cnt;
@@ -195,7 +196,7 @@ static int controller_task_request_net_weight(const uint8_t addr,int16_t *net_we
         return rc;
     }
     rc = 0;
-    os_event = osMessageGet(controller_task_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
+    os_event = osMessageGet(controller_task_net_weight_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
     if (os_event.status == osEventMessage){
         rsp_msg = (scale_task_net_weight_msg_t *)os_event.value.v;
         if (rsp_msg->cnt == 1) {
@@ -228,14 +229,14 @@ static int controller_task_request_remove_tar_weight(const uint8_t addr)
     scale_task_opt_msg_t *rsp_msg;
     int        rc = -1;
  
-    req_msg.type = REQ_REMOVE_TAR_WEIGHT;
+    req_msg.type = REQ_REMOVE_TARE_WEIGHT;
     req_msg.reserved = addr;
     status = osMessagePut(scale_task_msg_q_id,*(uint32_t *)&req_msg,CONTROLLER_TASK_MSG_PUT_TIMEOUT_VALUE);
     if (status != osOK) {
         return rc;
     }
  
-    os_event = osMessageGet(controller_task_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
+    os_event = osMessageGet(controller_task_remove_tare_weight_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
     if (os_event.status == osEventMessage){
         rsp_msg = (scale_task_opt_msg_t *)os_event.value.v;
         if (rsp_msg->cnt == 1 ) {
@@ -280,7 +281,7 @@ static int controller_task_request_calibration_zero(const uint8_t addr,int16_t w
         return rc;
     }
  
-    os_event = osMessageGet(controller_task_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
+    os_event = osMessageGet(controller_task_calibration_zero_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
     if (os_event.status == osEventMessage){
         rsp_msg = (scale_task_opt_msg_t *)os_event.value.v;
         if (rsp_msg->cnt == 1 ) {
@@ -324,7 +325,7 @@ static int controller_task_request_calibration_full(const uint8_t addr,int16_t w
         return rc;
     }
  
-    os_event = osMessageGet(controller_task_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
+    os_event = osMessageGet(controller_task_calibration_full_msg_q_id,CONTROLLER_TASK_MSG_WAIT_TIMEOUT_VALUE);
     if (os_event.status == osEventMessage){
         rsp_msg = (scale_task_opt_msg_t *)os_event.value.v;
         if (rsp_msg->cnt == 1 ) {
@@ -379,7 +380,7 @@ static int controller_task_receive_adu(int handle,uint8_t *adu,uint32_t wait_tim
     controller_step_t step;
 
     timeout = wait_timeout;
-    length_to_read = 2;
+    length_to_read = 3;
     read_length = 0;
     step = CONTROLLER_TASK_ADU_HEAD_STEP;
   
@@ -391,6 +392,7 @@ static int controller_task_receive_adu(int handle,uint8_t *adu,uint32_t wait_tim
         }
         if (rc == 0) {
             log_error("controller select timeout.read_len:%d. len_to_read:%d.timeout:%d.\r\n",read_length,length_to_read,timeout);
+            rc = -1;
             goto exit;
         }
   
@@ -437,7 +439,7 @@ static int controller_task_receive_adu(int handle,uint8_t *adu,uint32_t wait_tim
             /*接收完成了全部的数据*/
             case CONTROLLER_TASK_ADU_CRC_STEP:
                 crc_calculated = controller_task_crc16(adu,read_length - CONTROLLER_TASK_ADU_CRC_LEN);
-                crc_received = adu[read_length - CONTROLLER_TASK_ADU_CRC_LEN]<< 8 | adu[read_length - CONTROLLER_TASK_ADU_CRC_LEN - 1];
+                crc_received = adu[read_length - CONTROLLER_TASK_ADU_CRC_LEN] | adu[read_length - CONTROLLER_TASK_ADU_CRC_LEN + 1] << 8;
                 if (crc_calculated != crc_received) {
                     log_error("controller err in crc.recv:%d calculate:%d.\r\n",crc_received,crc_calculated);
                     rc = -1;
@@ -467,24 +469,19 @@ exit:
 * @return adu长度
 * @note
 */
-static uint8_t controller_task_build_rsp_adu(uint8_t *adu,const pdu_information_t *pdu_info,const uint8_t *value,const uint8_t cnt)
+static uint8_t controller_task_build_rsp_adu(uint8_t *adu,const uint8_t *value,const uint8_t cnt)
 {
     uint8_t adu_length = 0;
     /*ADU head*/
     adu[adu_length ++] = CONTROLLER_TASK_ADU_HEAD0_VALUE;
     adu[adu_length ++] = CONTROLLER_TASK_ADU_HEAD1_VALUE;
-    /*ADU addr*/
-    adu[adu_length ++] = pdu_info->controller_addr;
     /*PDU len*/
-    adu[adu_length ++] = cnt + 1 + 1;/*pdu code + pdu scale_addr + cnt*/
-    /*PDU code*/
-    adu[adu_length ++] = pdu_info->code;
-    /*PDU value scale addr*/
-    adu[adu_length ++] = pdu_info->scale_addr;
-    /*PDU value result*/
-    for (uint8_t i = 0;i < cnt;i ++) {
-         adu[adu_length ++] = value[i];
+    adu[adu_length ++] = cnt;
+    /*PDU*/
+    for (uint8_t i = 0;i < cnt; i ++) {
+        adu[adu_length ++] = value[i];
     }
+    /*CRC16*/
     adu_length = controller_task_rsp_buffer_add_crc16(adu,adu_length);
 
     return adu_length;
@@ -552,8 +549,12 @@ static int controller_task_parse_pdu(const uint8_t *pdu,uint8_t size,pdu_informa
         log_error("pdu code:%d > %d err.\r\n",pdu_info->code,CONTROLLER_TASK_PDU_CODE_MAX);
         return -1;
     }
-    pdu_info->scale_addr = pdu[CONTROLLER_TASK_PDU_SCALE_ADDR_OFFSET];
-    pdu_info->value_cnt = size - 3;
+    if (pdu_info->code == CONTROLLER_TASK_PDU_CODE_CONFIGRATION) {
+        pdu_info->value_cnt = size - 2;
+    } else {
+        pdu_info->scale_addr = pdu[CONTROLLER_TASK_PDU_SCALE_ADDR_OFFSET];
+        pdu_info->value_cnt = size - 3;
+    }
     rc = controller_task_pdu_code_check(pdu_info->code,pdu_info->value_cnt);
     if (rc != 0) {
         log_error("pdu code check err.\r\n");
@@ -580,62 +581,66 @@ static int controller_task_process_pdu_info(pdu_information_t *pdu_info,uint8_t 
     int rc;
 
     int16_t calibration_weight;
+    value[0] = CONTROLLER_TASK_CONTROLLER_ADDR;
+    value[1] = pdu_info->code;
     switch (pdu_info->code) {
-        case CONTROLLER_TASK_PDU_CODE_CONFIGRATION:
-        rc = controller_task_request_configration(value);
+        case CONTROLLER_TASK_PDU_CODE_CONFIGRATION:    
+        rc = controller_task_request_configration(&value[2]);
         if (rc <= 0) {
-            log_error("req configration weight err.\r\n");
+            log_error("req configration err.\r\n");
             goto err_exit;
         } 
-        *value_cnt = rc;
+        *value_cnt = rc + 2;
         break;
     case CONTROLLER_TASK_PDU_CODE_NET_WEIGHT:
-        rc = controller_task_request_net_weight(pdu_info->scale_addr,(int16_t *)value);
+        value[2] = pdu_info->scale_addr;
+        rc = controller_task_request_net_weight(pdu_info->scale_addr,(int16_t *)&value[3]);
         if (rc <= 0) {
             log_error("req net weight err.\r\n");
             goto err_exit;
         } 
-        *value_cnt = rc;
+        *value_cnt = rc + 3;
         break;
      case CONTROLLER_TASK_PDU_CODE_REMOVE_TAR_WEIGHT:
         rc = controller_task_request_remove_tar_weight(pdu_info->scale_addr);
-        *value_cnt = 1;
+
         if (rc == 0) {
-            value[0] = CONTROLLER_TASK_SUCCESS_VALUE;
+            value[2] = CONTROLLER_TASK_SUCCESS_VALUE;
         } else {
             log_error("req remove tar weight fail.\r\n");
-            value[0] = CONTROLLER_TASK_FAILURE_VALUE;
+            value[2] = CONTROLLER_TASK_FAILURE_VALUE;
         }
+        *value_cnt = 3;
         break;   
      case CONTROLLER_TASK_PDU_CODE_CALIBRATION_ZERO:
         calibration_weight = pdu_info->value[1] << 8 | pdu_info->value[0];
-        *value_cnt = 1;
         rc = controller_task_request_calibration_zero(pdu_info->scale_addr,calibration_weight);
         if (rc == 0) {
-            value[0] = CONTROLLER_TASK_SUCCESS_VALUE;
+            value[2] = CONTROLLER_TASK_SUCCESS_VALUE;
         } else {
             log_error("req calibration zero fail.\r\n");
-            value[0] = CONTROLLER_TASK_FAILURE_VALUE;
+            value[2] = CONTROLLER_TASK_FAILURE_VALUE;
         }
+        *value_cnt = 3;
         break;  
      case CONTROLLER_TASK_PDU_CODE_CALIBRATION_FULL:
         calibration_weight = pdu_info->value[1] << 8 | pdu_info->value[0];
-        *value_cnt = 1;
         rc = controller_task_request_calibration_full(pdu_info->scale_addr,calibration_weight);
         if (rc == 0) {
-            value[0] = CONTROLLER_TASK_SUCCESS_VALUE;
+            value[2] = CONTROLLER_TASK_SUCCESS_VALUE;
         } else {
             log_error("req calibration full fail.\r\n");
-            value[0] = CONTROLLER_TASK_FAILURE_VALUE;
+            value[2] = CONTROLLER_TASK_FAILURE_VALUE;
         }
+        *value_cnt = 3;
         break;  
      case CONTROLLER_TASK_PDU_CODE_FIRMWARE_VERSION:
-        *value_cnt = 3;
-        rc = controller_task_request_firmware_version((uint32_t *)value);
+        rc = controller_task_request_firmware_version((uint32_t *)&value[2]);
         if (rc != 0) {
             log_error("req firmware version err.\r\n");
             goto err_exit;
         }
+        *value_cnt = 5;
         break; 
     default:
         log_error("controller internal err.code:%d.\r\n",pdu_info->code);
@@ -682,6 +687,12 @@ static int controller_task_send_rsp_adu(int handle,uint8_t *adu,uint8_t size,uin
     return 0;
 }
 
+/*中断处理*/
+void FLEXCOMM3_IRQHandler()
+{
+    nxp_serial_uart_hal_isr(controller_serial_handle);
+
+}
        
 /*
 * @brief 与主机通信任务
@@ -717,11 +728,11 @@ void controller_task(void const * argument)
         serial_flush(controller_serial_handle);
         /*接收主机发送的adu*/
         rc = controller_task_receive_adu(controller_serial_handle,(uint8_t *)recv_adu,CONTROLLER_TASK_WAIT_TIMEOUT_VALUE,CONTROLLER_TASK_FRAME_TIMEOUT_VALUE);
-        if (rc < 0) {
+        if (rc <= 0) {
             continue;
         }
         /*解析pdu*/
-        rc = controller_task_parse_pdu((uint8_t *)&recv_adu[CONTROLLER_TASK_ADU_PDU_OFFSET],rc - CONTROLLER_TASK_ADU_HEAD_LEN - CONTROLLER_TASK_ADU_CRC_LEN,&pdu_info);
+        rc = controller_task_parse_pdu((uint8_t *)&recv_adu[CONTROLLER_TASK_ADU_PDU_OFFSET],rc - CONTROLLER_TASK_ADU_HEAD_LEN - CONTROLLER_TASK_ADU_PDU_LEN_LEN - CONTROLLER_TASK_ADU_CRC_LEN,&pdu_info);
         if (rc < 0) {
             continue;
         }
@@ -731,7 +742,7 @@ void controller_task(void const * argument)
             continue;
         }
         /*构建处理结果的回应*/
-        adu_size = controller_task_build_rsp_adu(rsp_adu,&pdu_info,value,value_cnt);
+        adu_size = controller_task_build_rsp_adu(rsp_adu,value,value_cnt);
         /*回应主机处理结果*/
         rc = controller_task_send_rsp_adu(controller_serial_handle,rsp_adu,adu_size,CONTROLLER_TASK_SEND_TIMEOUT);
         if (rc < 0) {

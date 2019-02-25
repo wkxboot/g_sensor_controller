@@ -315,7 +315,7 @@ err_exit:
 */
 static int scale_task_read_scale_hard_configration(scale_hard_configration_t *config)
 {
-    config->cnt = 4;
+    config->cnt = 2;
     config->addr[0] = 11;
     config->addr[1] = 21;
     config->addr[2] = 31;
@@ -342,7 +342,7 @@ static void scale_task_information_init(scale_task_information_t *info)
 
     for (uint8_t i = 0;i < info->cnt;i ++) {
         info->scale[i].addr = hard_configratin.addr[i];
-        info->scale[i].port = i;
+        info->scale[i].port = 4 + i;
         info->scale[i].baud_rates = SCALE_TASK_SERIAL_BAUDRATES;
         info->scale[i].data_bits = SCALE_TASK_SERIAL_DATABITS;
         info->scale[i].stop_bits = SCALE_TASK_SERIAL_STOPBITS;
@@ -685,8 +685,28 @@ static int scale_task_process_calibration_full_msg(scale_task_information_t *inf
 
     return rc;
 }
+
+extern void nxp_serial_uart_hal_isr(int handle);
+scale_task_information_t information;
+
+
+/*中断处理*/
+void FLEXCOMM4_IRQHandler()
+{
+    nxp_serial_uart_hal_isr(information.scale[0].handle);
+
+}
+
+/*中断处理*/
+void FLEXCOMM5_IRQHandler()
+{
+    nxp_serial_uart_hal_isr(information.scale[1].handle);
+
+}
+
+
 /*
-* @brief 电子秤主任务
+* @brief 电子秤任务
 * @param argument 任务参数
 * @return 无
 * @note
@@ -696,7 +716,6 @@ void scale_task(void const *argument)
 {
     osEvent os_event;
     task_msg_t req_msg;
-    scale_task_information_t information;
 
     /*初始化电子秤子任务配置*/
     scale_task_information_init(&information);
@@ -711,18 +730,18 @@ void scale_task(void const *argument)
             }
             /*获取净重值*/
             if (req_msg.type == REQ_NET_WEIGHT) { 
-                scale_task_process_net_weight_msg(&information,req_msg.reserved,controller_task_cfg_msg_q_id);
+                scale_task_process_net_weight_msg(&information,req_msg.reserved,controller_task_net_weight_msg_q_id);
             }
             /*去除皮重*/
-            if (req_msg.type == REQ_REMOVE_TAR_WEIGHT) { 
-                scale_task_process_remove_tare_weight_msg(&information,req_msg.reserved,controller_task_cfg_msg_q_id);
+            if (req_msg.type == REQ_REMOVE_TARE_WEIGHT) { 
+                scale_task_process_remove_tare_weight_msg(&information,req_msg.reserved,controller_task_remove_tare_weight_msg_q_id);
             }
             /*0点校准*/
             if (req_msg.type == REQ_CALIBRATION_ZERO) { 
                 scale_task_process_calibration_zero_msg(&information,req_msg.reserved,req_msg.value,controller_task_calibration_zero_msg_q_id);
             }
             /*获取净重值*/
-            if (req_msg.type == REQ_NET_WEIGHT) { 
+            if (req_msg.type == REQ_CALIBRATION_FULL) { 
                 scale_task_process_calibration_full_msg(&information,req_msg.reserved,req_msg.value,controller_task_calibration_full_msg_q_id);
             }
         }

@@ -54,7 +54,7 @@ int utils_timer_init(utils_timer_t *timer,uint32_t timeout,bool up);
 *  功能：定时器现在的值
 *  返回：>=0：现在时间值 其他：失败
 */ 
-int utils_timer_value(utils_timer_t *timer);
+uint32_t utils_timer_value(utils_timer_t *timer);
 
 /* 函数：utils_get_str_addr_by_num
 *  功能：获取字符串中第num个str的地址
