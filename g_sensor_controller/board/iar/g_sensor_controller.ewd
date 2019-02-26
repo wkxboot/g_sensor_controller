@@ -32,11 +32,11 @@
                 </option>
                 <option>
                     <name>MacOverride</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>MacFile</name>
-                    <state></state>
+                    <state>D:\development\git\g_sensor_controller\g_sensor_controller\board\iar\segger_rtt.mac</state>
                 </option>
                 <option>
                     <name>MemOverride</name>
