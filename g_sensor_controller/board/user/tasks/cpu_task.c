@@ -23,7 +23,7 @@ void cpu_task(void const * argument)
     uint8_t read_cnt;
 
     while (1) {
-        log_debug("cpu:%d%%.",osGetCPUUsage());
+        //log_debug("cpu:%d%%.",osGetCPUUsage());
         bsp_sys_led_toggle();
         osDelay(250); 
  

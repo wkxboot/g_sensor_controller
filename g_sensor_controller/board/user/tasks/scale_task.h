@@ -2,7 +2,6 @@
 #define  __SCALE_TASK_H__
 
 extern osThreadId   scale_task_hdl;
-extern osMessageQId scale_task_msg_q_id;
 void scale_task(void const * argument);
 
 
@@ -15,8 +14,9 @@ void scale_task(void const * argument);
 #define  SCALE_TASK_SERIAL_STOPBITS           1
 
 
-#define  SCALE_TASK_NET_WEIGHT_ERR_VALUE      0x7FFFF
+#define  SCALE_TASK_NET_WEIGHT_ERR_VALUE      0x7FFF
 #define  SCALE_TASK_SUCCESS                   0xaa
 #define  SCALE_TASK_FAILURE                   0xbb
 
+#define  SCALE_TASK_MSG_WAIT_TIMEOUT_VALUE    osWaitForever
 #endif

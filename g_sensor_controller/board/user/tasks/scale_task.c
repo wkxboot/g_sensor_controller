@@ -32,13 +32,14 @@ typedef enum
 #define  ADU_CRC_SIZE                  2
 /*PDU*/
 #define  PDU_SIZE_MIN                  2
-#define  PDU_CODE_CONFIGRATION         0
-#define  PDU_CODE_NET_WEIGHT           1
-#define  PDU_CODE_REMOVE_TARE_WEIGHT   2
-#define  PDU_CODE_CALIBRATION_ZERO     3
-#define  PDU_CODE_CALIBRATION_FULL     4
+#define  PDU_CODE_NET_WEIGHT           0
+#define  PDU_CODE_REMOVE_TARE_WEIGHT   1
+#define  PDU_CODE_CALIBRATION_ZERO     2
+#define  PDU_CODE_CALIBRATION_FULL     3
+#define  PDU_CODE_SENSOR_ID            4
 #define  PDU_CODE_FIRMWARE_VERSION     5
-#define  PDU_CODE_MAX                  PDU_CODE_FIRMWARE_VERSION
+#define  PDU_CODE_SET_ADDR             6
+#define  PDU_CODE_MAX                  PDU_CODE_SET_ADDR
 
 /*协议错误码*/
 #define  PDU_NET_WEIGHT_ERR_VALUE      0x7FFF
@@ -140,8 +141,8 @@ static uint8_t adu_add_crc16(uint8_t *adu,uint8_t size)
     uint16_t crc_calculated;
     crc_calculated = calculate_crc16(adu,size);
 
-    adu[size ++] =  crc_calculated >> 8;
     adu[size ++] =  crc_calculated & 0xff;
+    adu[size ++] =  crc_calculated >> 8;
     return size;
 }
 /*
@@ -306,9 +307,6 @@ static int parse_pdu(const uint8_t *pdu,uint8_t size,const uint8_t addr,const ui
     uint8_t scale_addr;
     uint8_t pdu_offset = 0;
 
-    uint16_t net_weight;
-
-
     if (size < PDU_SIZE_MIN) {
         log_error("pdu size:%d < %d err.\r\n",size,PDU_SIZE_MIN);
         return -1;
@@ -318,7 +316,6 @@ static int parse_pdu(const uint8_t *pdu,uint8_t size,const uint8_t addr,const ui
         log_error("pdu addr:%d != %d err.\r\n",scale_addr,addr);
         return -1;
     }
-
     opt_code = pdu[pdu_offset ++];
     if (opt_code != code) {
         log_error("pdu code:%d > %d err.\r\n",opt_code,code);
@@ -326,21 +323,16 @@ static int parse_pdu(const uint8_t *pdu,uint8_t size,const uint8_t addr,const ui
     }
     switch (opt_code) {
     case PDU_CODE_NET_WEIGHT:
-        net_weight = pdu[pdu_offset ++];
-        net_weight |= (uint16_t)pdu[pdu_offset ++] << 8;
-       
+        value[0] = pdu[pdu_offset ++];
+        value[1] = pdu[pdu_offset ++];      
         if (pdu_offset != size ) {
             log_error("pdu size:%d of net weight err.\r\n",size);
             return -1;
-        }
-        if (net_weight == PDU_NET_WEIGHT_ERR_VALUE) {
-            value[0] = SCALE_TASK_NET_WEIGHT_ERR_VALUE & 0xFF;
-            value[1] = (uint16_t)(SCALE_TASK_NET_WEIGHT_ERR_VALUE) >> 8;
-        }
+        }  
         rc = 2;
         break;
      case PDU_CODE_REMOVE_TARE_WEIGHT:
-        value[0] = pdu[pdu_offset ++] == PDU_SUCCESS_VALUE ? SCALE_TASK_SUCCESS : SCALE_TASK_FAILURE;
+        value[0] = pdu[pdu_offset ++];
         if (pdu_offset != size ) {
             log_error("pdu size:%d of remove tare weight err.\r\n",size);
             return -1;
@@ -348,7 +340,7 @@ static int parse_pdu(const uint8_t *pdu,uint8_t size,const uint8_t addr,const ui
         rc = 1;
         break;   
      case PDU_CODE_CALIBRATION_ZERO:
-        value[0] = pdu[pdu_offset ++] == PDU_SUCCESS_VALUE ? SCALE_TASK_SUCCESS : SCALE_TASK_FAILURE;
+        value[0] = pdu[pdu_offset ++];
         if (pdu_offset != size ) {
             log_error("pdu size:%d of calibration zero err.\r\n",size);
             return -1;
@@ -356,7 +348,7 @@ static int parse_pdu(const uint8_t *pdu,uint8_t size,const uint8_t addr,const ui
         rc = 1;
         break;  
      case PDU_CODE_CALIBRATION_FULL:
-        value[0] = pdu[pdu_offset ++] == PDU_SUCCESS_VALUE ? SCALE_TASK_SUCCESS : SCALE_TASK_FAILURE;
+        value[0] = pdu[pdu_offset ++];
         if (pdu_offset != size ) {
             log_error("pdu size:%d of calibration full err.\r\n",size);
             return -1;
@@ -403,6 +395,8 @@ static int scale_task_poll(int handle,uint8_t addr,uint8_t code,uint8_t *value,u
 
     rc = receive_adu(handle,adu_recv,ADU_RSP_TIMEOUT);
     if (rc <= 0) {
+        /*清空接收缓存*/
+        serial_flush(handle);
         return -1;
     }
     rc = parse_pdu((uint8_t *)&adu_recv[ADU_PDU_OFFSET],rc - ADU_HEAD_SIZE - ADU_PDU_SIZE_REGION_SIZE - ADU_CRC_SIZE,addr,code,rsp);
@@ -412,12 +406,48 @@ static int scale_task_poll(int handle,uint8_t addr,uint8_t code,uint8_t *value,u
     return rc;
 }
  
+
+
+/*
+* @brief 处理净重值
+* @param task 电子秤任务配置指针
+* @param addr 电子秤地址
+* @return 0 成功
+* @return -1 失败
+* @note
+*/
+static int scale_task_process_net_weight_msg(scale_task_configration_t *task,int8_t addr)
+{
+    int rc ;
+    osStatus status;
+    task_msg_t msg;
+    uint8_t req_value[2];
+    uint8_t rsp_value[2];
+
+    rc = scale_task_poll(task->handle,addr,PDU_CODE_NET_WEIGHT,req_value,0,rsp_value);
+    if (rc < 0) {
+        return -1;
+    }
+    msg.type = RSP_NET_WEIGHT;
+    msg.value = (uint16_t)rsp_value[1] << 8 | rsp_value[0];
+    
+    if (msg.value == PDU_NET_WEIGHT_ERR_VALUE) {
+        msg.value = SCALE_TASK_NET_WEIGHT_ERR_VALUE;   
+    }
+    status = osMessagePut(task->net_weight_msg_q_id,*(uint32_t *)&msg,0);
+    if (status != osOK) {
+        log_error("put net weight msg err:%d.\r\n",status);
+        return -1;
+    }
+    return 0;
+}
+
 /*
 * @brief 处理去皮置零
-* @param info 电子秤任务信息指针
+* @param task 电子秤任务配置指针
 * @param addr 电子秤地址
-* @param msg_id 目的消息句柄
-* @return 无
+* @return 0 成功
+* @return -1 失败
 * @note
 */
 static int scale_task_process_remove_tare_weight_msg(scale_task_configration_t *task,int8_t addr)
@@ -434,9 +464,8 @@ static int scale_task_process_remove_tare_weight_msg(scale_task_configration_t *
         return -1;
     }
     msg.type = RSP_REMOVE_TARE_WEIGHT;
-    msg.value = (uint16_t)rsp_value[1] << 8 | rsp_value[0];
-
-    status = osMessagePut(task->remove_tare_weight_msg_q_id,0);
+    msg.value = rsp_value[0] ==  PDU_SUCCESS_VALUE ? SCALE_TASK_SUCCESS : SCALE_TASK_FAILURE;
+    status = osMessagePut(task->remove_tare_weight_msg_q_id,*(uint32_t *)&msg,0);
     if (status != osOK) {
         log_error("put remove tare msg err:%d.\r\n",status);
         return -1;
@@ -445,174 +474,69 @@ static int scale_task_process_remove_tare_weight_msg(scale_task_configration_t *
 }
 
 /*
-* @brief 处理0点校准
-* @param info 电子秤任务信息指针
+* @brief 处理零点校准
+* @param task 电子秤任务配置指针
 * @param addr 电子秤地址
-* @param weight 校准重量
-* @param msg_id 目的消息句柄
-* @return 无
+* @return 0 成功
+* @return -1 失败
 * @note
 */
-static int scale_task_process_calibration_zero_msg(scale_task_information_t *info,uint8_t addr,int16_t weight,osMessageQId msg_id)
+static int scale_task_process_calibration_zero_msg(scale_task_configration_t *task,int8_t addr,int16_t weight)
 {
     int rc ;
     osStatus status;
-    uint8_t adu_size;
-    uint8_t req_adu[SCALE_TASK_FRAME_SIZE_MAX];
-    uint8_t rsp_adu[SCALE_TASK_FRAME_SIZE_MAX];
+    task_msg_t msg;
+
     uint8_t req_value[2];
     uint8_t rsp_value[2];
-    uint8_t rsp_value_cnt;
-    utils_timer_t timer;
-    static scale_task_opt_msg_t msg;
-    utils_timer_init(&timer,SCALE_TASK_SCALE_RSP_TIMEOUT_VALUE,false);
 
-    msg.cnt = 0;
-    msg.index = 0;
     req_value[0] = weight & 0xFF;
     req_value[1] = weight >> 8;
-
-    for (uint8_t i = 0;i < info->cnt;i ++) {
-        if (addr != 0 && addr != info->scale[i].addr) {
-            continue;
-        }
-        msg.cnt ++;/*判断有效地址的数量*/
-        msg.index = i;
-        adu_size = scale_task_build_adu(req_adu,info->scale[i].addr,SCALE_TASK_PDU_CODE_CALIBRATION_ZERO,req_value,2);
-        rc = scale_task_req(info->scale[i].handle,req_adu,adu_size,utils_timer_value(&timer));
-        if ( rc != 0 ) {
-           log_error("scale addr:%d calibration zero req err.\r\n",addr);
-           continue;
-        }
+    rc = scale_task_poll(task->handle,addr,PDU_CODE_REMOVE_TARE_WEIGHT,req_value,2,rsp_value);
+    if (rc < 0) {
+        return -1;
     }
-
-    for (uint8_t i = 0;i < info->cnt;i ++) {
-        if (addr != 0 && addr != info->scale[i].addr) {
-            continue;
-        }
-        rc = scale_task_wait_rsp(info->scale[i].handle,rsp_adu,utils_timer_value(&timer));
-        if ( rc <= 0 ) {
-            log_error("scale addr:%d calibration zero rsp err.\r\n",addr);
-            msg.opt_value[i] = SCALE_TASK_FAILURE;
-            continue;
-        }
-        adu_size = rc;
-        rc = scale_task_parse_pdu(&rsp_adu[ADU_PDU_OFFSET],adu_size - 5,addr,SCALE_TASK_PDU_CODE_CALIBRATION_ZERO,rsp_value,2);
-        
-        if (rc != 0 || rsp_value_cnt != 1) {
-            log_error("scale addr:%d calibration zero parse err.\r\n",addr);
-            msg.opt_value[i] = SCALE_TASK_FAILURE_VALUE;
-            continue;
-        } else {
-            msg.opt_value[i] = rsp_value[0] == SCALE_TASK_SUCCESS_VALUE ? SCALE_TASK_SUCCESS : SCALE_TASK_FAILURE;         
-        }
+    msg.type = RSP_CALIBRATION_ZERO;
+    msg.value = rsp_value[0] ==  PDU_SUCCESS_VALUE ? SCALE_TASK_SUCCESS : SCALE_TASK_FAILURE;
+    status = osMessagePut(task->calibration_zero_msg_q_id,*(uint32_t *)&msg,0);
+    if (status != osOK) {
+        log_error("put calibration zero msg err:%d.\r\n",status);
+        return -1;
     }
-    rc = -1;
-    if ( msg.cnt > 0 ) {
-        status = osMessagePut(msg_id,(uint32_t)&msg,SCALE_TASK_MSG_PUT_TIMEOUT_VALUE);
-        if (status != osOK) {
-            log_error("scale task put calibration zero msg err.code:%d.\r\n",status);
-        }else {
-            rc = 0;
-        }
-    }
-
-    return rc;
+    return 0;
 }
 /*
 * @brief 处理增益校准
-* @param info 电子秤任务信息指针
+* @param task 电子秤任务配置指针
 * @param addr 电子秤地址
-* @param weight 校准重量
-* @param msg_id 目的消息句柄
-* @return 无
+* @return 0 成功
+* @return -1 失败
 * @note
 */
-static int scale_task_process_calibration_full_msg(scale_task_information_t *info,uint8_t addr,int16_t weight,osMessageQId msg_id)
+static int scale_task_process_calibration_full_msg(scale_task_configration_t *task,int8_t addr,int16_t weight)
 {
     int rc ;
     osStatus status;
-    uint8_t adu_size;
-    uint8_t req_adu[SCALE_TASK_FRAME_SIZE_MAX];
-    uint8_t rsp_adu[SCALE_TASK_FRAME_SIZE_MAX];
+    task_msg_t msg;
+
     uint8_t req_value[2];
     uint8_t rsp_value[2];
-    uint8_t rsp_value_cnt;
-    utils_timer_t timer;
-    static scale_task_opt_msg_t msg;
-    utils_timer_init(&timer,SCALE_TASK_SCALE_RSP_TIMEOUT_VALUE,false);
 
-    msg.cnt = 0;
-    msg.index = 0;
     req_value[0] = weight & 0xFF;
     req_value[1] = weight >> 8;
-
-    for (uint8_t i = 0;i < info->cnt;i ++) {
-        if (addr != 0 && addr != info->scale[i].addr) {
-            continue;
-        }
-        msg.cnt ++;/*判断有效地址的数量*/
-        msg.index = i;
-        adu_size = scale_task_build_adu(req_adu,info->scale[i].addr,SCALE_TASK_PDU_CODE_CALIBRATION_ZERO,req_value,2);
-        rc = scale_task_req(info->scale[i].handle,req_adu,adu_size,utils_timer_value(&timer));
-        if ( rc != 0 ) {
-           log_error("scale addr:%d calibration full req err.\r\n",addr);
-           continue;
-        }
+    rc = scale_task_poll(task->handle,addr,PDU_CODE_REMOVE_TARE_WEIGHT,req_value,2,rsp_value);
+    if (rc < 0) {
+        return -1;
     }
-
-    for (uint8_t i = 0;i < info->cnt;i ++) {
-        if (addr != 0 && addr != info->scale[i].addr) {
-            continue;
-        }
-        rc = scale_task_wait_rsp(info->scale[i].handle,rsp_adu,utils_timer_value(&timer));
-        if ( rc <= 0 ) {
-            log_error("scale addr:%d calibration full rsp err.\r\n",addr);
-            msg.opt_value[i] = SCALE_TASK_FAILURE;
-            continue;
-        }
-        adu_size = rc;
-        rc = scale_task_parse_pdu(&rsp_adu[ADU_PDU_OFFSET],adu_size - 5,addr,SCALE_TASK_PDU_CODE_CALIBRATION_ZERO,rsp_value,2);
-        
-        if (rc != 0 || rsp_value_cnt != 1) {
-            log_error("scale addr:%d calibration full parse err.\r\n",addr);
-            msg.opt_value[i] = SCALE_TASK_FAILURE_VALUE;
-            continue;
-        } else {
-            msg.opt_value[i] = rsp_value[0] == SCALE_TASK_SUCCESS_VALUE ? SCALE_TASK_SUCCESS : SCALE_TASK_FAILURE;         
-        }
+    msg.type = RSP_CALIBRATION_FULL;
+    msg.value = rsp_value[0] ==  PDU_SUCCESS_VALUE ? SCALE_TASK_SUCCESS : SCALE_TASK_FAILURE;
+    status = osMessagePut(task->calibration_full_msg_q_id,*(uint32_t *)&msg,0);
+    if (status != osOK) {
+        log_error("put calibration full msg err:%d.\r\n",status);
+        return -1;
     }
-    rc = -1;
-    if ( msg.cnt > 0 ) {
-        status = osMessagePut(msg_id,(uint32_t)&msg,SCALE_TASK_MSG_PUT_TIMEOUT_VALUE);
-        if (status != osOK) {
-            log_error("scale task put calibration full msg err.code:%d.\r\n",status);
-        }else {
-            rc = 0;
-        }
-    }
-
-    return rc;
+    return 0;
 }
-
-extern void nxp_serial_uart_hal_isr(int handle);
-scale_task_information_t information;
-
-
-/*中断处理*/
-void FLEXCOMM4_IRQHandler()
-{
-    nxp_serial_uart_hal_isr(information.scale[0].handle);
-
-}
-
-/*中断处理*/
-void FLEXCOMM5_IRQHandler()
-{
-    nxp_serial_uart_hal_isr(information.scale[1].handle);
-
-}
-
 
 /*
 * @brief 电子秤任务
@@ -625,29 +549,29 @@ void scale_task(void const *argument)
 {
     osEvent os_event;
     task_msg_t req_msg;
+    scale_task_configration_t *task_configration;
 
-    /*初始化电子秤子任务配置*/
-    scale_task_information_init(&information);
+    task_configration = (scale_task_configration_t *)argument;
     while (1) {
-        os_event = osMessageGet(scale_task_msg_q_id,SCALE_TASK_MSG_WAIT_TIMEOUT_VALUE);
+        os_event = osMessageGet(task_configration->msg_q_id,SCALE_TASK_MSG_WAIT_TIMEOUT_VALUE);
         if (os_event.status == osEventMessage) {
             req_msg = *(task_msg_t *)&os_event.value.v;
  
             /*获取净重值*/
             if (req_msg.type == REQ_NET_WEIGHT) { 
-                scale_task_process_net_weight_msg(&information,req_msg.reserved,controller_task_net_weight_msg_q_id);
+                scale_task_process_net_weight_msg(task_configration,task_configration->default_addr);
             }
             /*去除皮重*/
             if (req_msg.type == REQ_REMOVE_TARE_WEIGHT) { 
-                scale_task_process_remove_tare_weight_msg(&information,req_msg.reserved,controller_task_remove_tare_weight_msg_q_id);
+                scale_task_process_remove_tare_weight_msg(task_configration,task_configration->default_addr);
             }
             /*0点校准*/
             if (req_msg.type == REQ_CALIBRATION_ZERO) { 
-                scale_task_process_calibration_zero_msg(&information,req_msg.reserved,req_msg.value,controller_task_calibration_zero_msg_q_id);
+                scale_task_process_calibration_zero_msg(task_configration,task_configration->default_addr,req_msg.value);
             }
             /*获取净重值*/
             if (req_msg.type == REQ_CALIBRATION_FULL) { 
-                scale_task_process_calibration_full_msg(&information,req_msg.reserved,req_msg.value,controller_task_calibration_full_msg_q_id);
+                scale_task_process_calibration_full_msg(task_configration,task_configration->default_addr,req_msg.value);
             }
         }
 
