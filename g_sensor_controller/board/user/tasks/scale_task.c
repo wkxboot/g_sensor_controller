@@ -492,7 +492,7 @@ static int scale_task_process_calibration_zero_msg(scale_task_configration_t *ta
 
     req_value[0] = weight & 0xFF;
     req_value[1] = weight >> 8;
-    rc = scale_task_poll(task->handle,addr,PDU_CODE_REMOVE_TARE_WEIGHT,req_value,2,rsp_value);
+    rc = scale_task_poll(task->handle,addr,PDU_CODE_CALIBRATION_ZERO,req_value,2,rsp_value);
     if (rc < 0) {
         return -1;
     }
@@ -524,7 +524,7 @@ static int scale_task_process_calibration_full_msg(scale_task_configration_t *ta
 
     req_value[0] = weight & 0xFF;
     req_value[1] = weight >> 8;
-    rc = scale_task_poll(task->handle,addr,PDU_CODE_REMOVE_TARE_WEIGHT,req_value,2,rsp_value);
+    rc = scale_task_poll(task->handle,addr,PDU_CODE_CALIBRATION_FULL,req_value,2,rsp_value);
     if (rc < 0) {
         return -1;
     }
@@ -547,6 +547,7 @@ static int scale_task_process_calibration_full_msg(scale_task_configration_t *ta
 
 void scale_task(void const *argument)
 {
+    int rc;
     osEvent os_event;
     task_msg_t req_msg;
     scale_task_configration_t *task_configration;
@@ -559,19 +560,31 @@ void scale_task(void const *argument)
  
             /*获取净重值*/
             if (req_msg.type == REQ_NET_WEIGHT) { 
-                scale_task_process_net_weight_msg(task_configration,task_configration->default_addr);
+                rc = scale_task_process_net_weight_msg(task_configration,task_configration->default_addr);
+                if (rc != 0) {
+                    log_error("scale addr:%d net weight err.\r\n",task_configration->addr);
+                }
             }
             /*去除皮重*/
             if (req_msg.type == REQ_REMOVE_TARE_WEIGHT) { 
-                scale_task_process_remove_tare_weight_msg(task_configration,task_configration->default_addr);
+                rc = scale_task_process_remove_tare_weight_msg(task_configration,task_configration->default_addr);
+                if (rc != 0) {
+                    log_error("scale addr:%d net weight err.\r\n",task_configration->addr);
+                }
             }
             /*0点校准*/
             if (req_msg.type == REQ_CALIBRATION_ZERO) { 
-                scale_task_process_calibration_zero_msg(task_configration,task_configration->default_addr,req_msg.value);
+                rc = scale_task_process_calibration_zero_msg(task_configration,task_configration->default_addr,req_msg.value);
+                if (rc != 0) {
+                    log_error("scale addr:%d net weight err.\r\n",task_configration->addr);
+                }   
             }
             /*获取净重值*/
             if (req_msg.type == REQ_CALIBRATION_FULL) { 
-                scale_task_process_calibration_full_msg(task_configration,task_configration->default_addr,req_msg.value);
+                rc = scale_task_process_calibration_full_msg(task_configration,task_configration->default_addr,req_msg.value);
+                if (rc != 0) {
+                    log_error("scale addr:%d net weight err.\r\n",task_configration->addr);
+                }
             }
         }
 
