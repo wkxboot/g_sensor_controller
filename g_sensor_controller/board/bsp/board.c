@@ -38,15 +38,7 @@
 #include "board.h"
 #include "pin_mux.h"
 
-/*数据灯*/
-static void bsp_data_stream_led_pin_init()
-{
-    gpio_pin_config_t pin;
-    pin.pinDirection = kGPIO_DigitalOutput;
-    pin.outputLogic = 0;
-    GPIO_PortInit(DATA_STREAM_LED_GPIO, DATA_STREAM_LED_PORT);
-    GPIO_PinInit(DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,DATA_STREAM_LED_PIN,&pin);
-}
+
 /*系统运行灯*/
 static void bsp_sys_led_pin_init()
 {
@@ -57,32 +49,11 @@ static void bsp_sys_led_pin_init()
     GPIO_PinInit(SYS_LED_GPIO,SYS_LED_PORT,SYS_LED_PIN,&pin);
 }
 
-/*数据灯相关*/
-void bsp_data_stream_led_toggle()
-{
-    GPIO_PortToggle(DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,(1<<DATA_STREAM_LED_PIN));
-}
-
-void bsp_data_stream_led_on()
-{
-    GPIO_PortSet(DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,(1U<<DATA_STREAM_LED_PIN));
-}
-
-void bsp_data_stream_led_off()
-{
-    GPIO_PortClear( DATA_STREAM_LED_GPIO,DATA_STREAM_LED_PORT,(1U<<DATA_STREAM_LED_PIN));
-}
-
-void bsp_sys_led_toggle()
-{
-    GPIO_PortToggle(SYS_LED_GPIO,SYS_LED_PORT,(1<<SYS_LED_PIN));
-}
 
 /*板级初始化*/
 int bsp_board_init()
 {
-    bsp_data_stream_led_pin_init();
-    bsp_sys_led_pin_init();
+    //bsp_sys_led_pin_init();
 
     BOARD_InitBootPins();
     BOARD_BootClockPLL180M();

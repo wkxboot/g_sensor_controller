@@ -24,17 +24,17 @@ void cpu_task(void const * argument)
 
     while (1) {
         //log_debug("cpu:%d%%.",osGetCPUUsage());
-        bsp_sys_led_toggle();
-        osDelay(250); 
+        //bsp_sys_led_toggle();
+        osDelay(200); 
  
         
-    /*设置日志输出等级*/
-    read_cnt = log_read(cmd,19);
-    cmd[read_cnt] = 0;
-    if (strncmp(cmd,"set level ",strlen("set level ")) == 0) {
-        level = atoi(cmd + strlen("set level "));
-        log_set_level(level);
-    }
+        /*设置日志输出等级*/
+        read_cnt = log_read(cmd,19);
+        cmd[read_cnt] = 0;
+        if (strncmp(cmd,"set level ",strlen("set level ")) == 0) {
+            level = atoi(cmd + strlen("set level "));
+            log_set_level(level);
+        }
  
  
     }

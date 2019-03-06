@@ -177,7 +177,7 @@ static scale_contex_t scale_contex;
 */
 static int controller_read_scale_addr_configration(scale_addr_configration_t *addr)
 {
-    addr->cnt = 2;
+    addr->cnt = 4;
     addr->value[0] = 11;
     addr->value[1] = 21;
     addr->value[2] = 31;
@@ -739,25 +739,168 @@ static int send_adu(int handle,uint8_t *adu,uint8_t size,uint32_t timeout)
     return serial_complete(handle,timeout);
 }
 
-/*中断处理*/
-void FLEXCOMM3_IRQHandler()
+/*
+* @brief 
+* @param
+* @param
+* @return 
+* @note
+*/
+
+static int get_serial_port_by_addr(uint8_t addr)
+{
+    int port = -1;
+    switch (addr) {
+    case 11:
+        port = 1;
+        break;
+    case 12:
+        port = 2;
+        break;
+    case 21:
+        port = 3;
+        break;
+    case 22:
+        port = 4;
+        break;
+    case 31:
+        port = 5;
+        break;
+    case 32:
+        port = 6;
+        break;
+    case 41:
+        port = 7;
+        break;
+    case 42:
+        port = 8;
+        break;
+    default :
+        log_error("addr:%d is invalid.\r\n",addr);
+        break;
+    }
+
+    return port;
+}
+/*
+* @brief 
+* @param
+* @param
+* @return 
+* @note
+*/
+
+static int get_serial_handle_by_port(scale_contex_t *contex,uint8_t port)
+{
+    for (uint8_t i = 0;i <contex->cnt;i ++) {
+        if (contex->task[i].port == port) {
+            return contex->task[i].handle;
+        }
+    }
+    return -1;
+}
+
+/*控制器任务通信中断处理*/
+void FLEXCOMM0_IRQHandler()
 {
     nxp_serial_uart_hal_isr(controller_serial_handle);
 
 }
-/*中断处理*/
+
+/*电子秤任务通信中断处理*/
+void FLEXCOMM1_IRQHandler()
+{
+    int handle;
+
+    handle = get_serial_handle_by_port(&scale_contex,1);
+    if (handle > 0) {
+        nxp_serial_uart_hal_isr(handle);
+    }
+
+}
+
+/*电子秤任务通信中断处理*/
+void FLEXCOMM2_IRQHandler()
+{
+    int handle;
+
+    handle = get_serial_handle_by_port(&scale_contex,2);
+    if (handle > 0) {
+        nxp_serial_uart_hal_isr(handle);
+    }
+
+}
+
+/*电子秤任务通信中断处理*/
+void FLEXCOMM3_IRQHandler()
+{
+    int handle;
+
+    handle = get_serial_handle_by_port(&scale_contex,3);
+    if (handle > 0) {
+        nxp_serial_uart_hal_isr(handle);
+    }
+
+}
+/*电子秤任务通信中断处理*/
 void FLEXCOMM4_IRQHandler()
 {
-    nxp_serial_uart_hal_isr(scale_contex.task[0].handle);
+    int handle;
+
+    handle = get_serial_handle_by_port(&scale_contex,4);
+    if (handle > 0) {
+        nxp_serial_uart_hal_isr(handle);
+    }
 
 }
 
-/*中断处理*/
+/*电子秤任务通信中断处理*/
 void FLEXCOMM5_IRQHandler()
 {
-    nxp_serial_uart_hal_isr(scale_contex.task[1].handle);
+    int handle;
+
+    handle = get_serial_handle_by_port(&scale_contex,5);
+    if (handle > 0) {
+        nxp_serial_uart_hal_isr(handle);
+    }
 
 }
+
+/*电子秤任务通信中断处理*/
+void FLEXCOMM6_IRQHandler()
+{
+    int handle;
+
+    handle = get_serial_handle_by_port(&scale_contex,6);
+    if (handle > 0) {
+        nxp_serial_uart_hal_isr(handle);
+    }
+
+}
+
+/*电子秤任务通信中断处理*/
+void FLEXCOMM7_IRQHandler()
+{
+    int handle;
+
+    handle = get_serial_handle_by_port(&scale_contex,7);
+    if (handle > 0) {
+        nxp_serial_uart_hal_isr(handle);
+    }
+
+}
+/*电子秤任务通信中断处理*/
+void FLEXCOMM8_IRQHandler()
+{
+    int handle;
+
+    handle = get_serial_handle_by_port(&scale_contex,8);
+    if (handle > 0) {
+        nxp_serial_uart_hal_isr(handle);
+    }
+
+}
+
 
 /*
 * @brief 电子称子任务配置初始化
@@ -778,7 +921,7 @@ static void controller_scale_contex_init(scale_contex_t *contex)
     for (uint8_t i = 0;i < contex->cnt;i ++) {
         contex->task[i].addr = scale_addr.value[i];
         contex->task[i].default_addr = CONTROLLER_TASK_SCALE_DEFAULT_ADDR;
-        contex->task[i].port = 4 + i;
+        contex->task[i].port = get_serial_port_by_addr(contex->task[i].addr);
         contex->task[i].baud_rates = SCALE_TASK_SERIAL_BAUDRATES;
         contex->task[i].data_bits = SCALE_TASK_SERIAL_DATABITS;
         contex->task[i].stop_bits = SCALE_TASK_SERIAL_STOPBITS;
