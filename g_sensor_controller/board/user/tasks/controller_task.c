@@ -586,7 +586,7 @@ static int parse_pdu(uint8_t *pdu,uint8_t size,uint8_t *adu)
     uint8_t scale_addr;
     uint8_t pdu_offset = 0;
     uint8_t adu_size = 0;
-    uint8_t calibration_weight;
+    uint16_t calibration_weight;
 
     if (size < PDU_SIZE_MIN) {
         log_error("pdu size:%d < %d err.\r\n",size,PDU_SIZE_MIN);
@@ -657,7 +657,7 @@ static int parse_pdu(uint8_t *pdu,uint8_t size,uint8_t *adu)
         scale_addr = pdu[pdu_offset ++];
         adu[adu_size ++] = scale_addr;
         calibration_weight = pdu[pdu_offset ++];
-        calibration_weight|= pdu[pdu_offset ++] << 8;
+        calibration_weight|= (uint16_t)pdu[pdu_offset ++] << 8;
         if (pdu_offset != size) {
             log_error("pdu size:%d of calibration zero err.\r\n",size);
             return -1;
@@ -674,7 +674,7 @@ static int parse_pdu(uint8_t *pdu,uint8_t size,uint8_t *adu)
         scale_addr = pdu[pdu_offset ++];
         adu[adu_size ++] = scale_addr;
         calibration_weight = pdu[pdu_offset ++];
-        calibration_weight|= pdu[pdu_offset ++] << 8;
+        calibration_weight|= (uint16_t)pdu[pdu_offset ++] << 8;
         if (pdu_offset != size) {
             log_error("pdu size:%d of calibration full err.\r\n",size);
             return -1;
