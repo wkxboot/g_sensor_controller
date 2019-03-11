@@ -59,7 +59,7 @@ typedef enum
 
 /*协议时间*/
 #define  ADU_WAIT_TIMEOUT              osWaitForever
-#define  ADU_FRAME_TIMEOUT             2
+#define  ADU_FRAME_TIMEOUT             3
 #define  ADU_RSP_TIMEOUT               200
 #define  ADU_SEND_TIMEOUT              5
 
@@ -263,14 +263,11 @@ static int request_net_weight(const scale_contex_t *contex,const uint8_t addr,ui
     /*等待消息*/
     for (uint8_t i = start;i < end;i ++) { 
         weight = PDU_NET_WEIGHT_ERR_VALUE;
-        while (utils_timer_value(&timer) > 0) {
-            os_event = osMessageGet(contex->task[i].net_weight_msg_q_id,utils_timer_value(&timer));
-            if (os_event.status == osEventMessage ){
-                rsp_msg = *(task_msg_t *)&os_event.value.v;
-                if (rsp_msg.type == RSP_NET_WEIGHT) {
-                    weight = rsp_msg.value == SCALE_TASK_NET_WEIGHT_ERR_VALUE ? PDU_NET_WEIGHT_ERR_VALUE : rsp_msg.value;
-                    break;
-                }
+        os_event = osMessageGet(contex->task[i].net_weight_msg_q_id,utils_timer_value(&timer));
+        if (os_event.status == osEventMessage ){
+            rsp_msg = *(task_msg_t *)&os_event.value.v;
+            if (rsp_msg.type == RSP_NET_WEIGHT) {
+                weight = rsp_msg.value == SCALE_TASK_NET_WEIGHT_ERR_VALUE ? PDU_NET_WEIGHT_ERR_VALUE : rsp_msg.value;             
             } 
 
         } 
@@ -317,16 +314,14 @@ static int request_remove_tare_weight(const scale_contex_t *contex,const uint8_t
     /*等待消息*/
     for (uint8_t i = start;i < end;i ++) { 
         result[i] = PDU_FAILURE_VALUE;
-        while (utils_timer_value(&timer) > 0) {
-            os_event = osMessageGet(contex->task[i].remove_tare_weight_msg_q_id,utils_timer_value(&timer));
-            if (os_event.status == osEventMessage ){
-                rsp_msg = *(task_msg_t *)&os_event.value.v;
-                if (rsp_msg.type == RSP_REMOVE_TARE_WEIGHT) {
-                    result[i] = (rsp_msg.value & 0xFF ) == SCALE_TASK_SUCCESS ? PDU_SUCCESS_VALUE : PDU_FAILURE_VALUE;
-                    break;
-                }
-            } 
+        os_event = osMessageGet(contex->task[i].remove_tare_weight_msg_q_id,utils_timer_value(&timer));
+        if (os_event.status == osEventMessage ){
+            rsp_msg = *(task_msg_t *)&os_event.value.v;
+            if (rsp_msg.type == RSP_REMOVE_TARE_WEIGHT) {
+                result[i] = (rsp_msg.value & 0xFF ) == SCALE_TASK_SUCCESS ? PDU_SUCCESS_VALUE : PDU_FAILURE_VALUE;
+            }
         } 
+        
     }
     /*只要有一个错误就是失败*/
     value[0] = PDU_SUCCESS_VALUE;
@@ -375,14 +370,11 @@ static int request_calibration_zero(const scale_contex_t *contex,const uint8_t a
     /*等待消息*/
     for (uint8_t i = start;i < end;i ++) { 
         result[i] = PDU_FAILURE_VALUE;
-        while (utils_timer_value(&timer) > 0) {
-            os_event = osMessageGet(contex->task[i].calibration_zero_msg_q_id,utils_timer_value(&timer));
-            if (os_event.status == osEventMessage ){
-                rsp_msg = *(task_msg_t *)&os_event.value.v;
-                if (rsp_msg.type == RSP_CALIBRATION_ZERO) {
-                    result[i] = (rsp_msg.value & 0xFF ) == SCALE_TASK_SUCCESS ? PDU_SUCCESS_VALUE : PDU_FAILURE_VALUE;
-                    break;
-                }
+        os_event = osMessageGet(contex->task[i].calibration_zero_msg_q_id,utils_timer_value(&timer));
+        if (os_event.status == osEventMessage ){
+            rsp_msg = *(task_msg_t *)&os_event.value.v;
+            if (rsp_msg.type == RSP_CALIBRATION_ZERO) {
+                result[i] = (rsp_msg.value & 0xFF ) == SCALE_TASK_SUCCESS ? PDU_SUCCESS_VALUE : PDU_FAILURE_VALUE;
             } 
         } 
     }
@@ -434,14 +426,11 @@ static int request_calibration_full(const scale_contex_t *contex,const uint8_t a
     /*等待消息*/
     for (uint8_t i = start;i < end;i ++) { 
         result[i] = PDU_FAILURE_VALUE;
-        while (utils_timer_value(&timer) > 0) {
-            os_event = osMessageGet(contex->task[i].calibration_full_msg_q_id,utils_timer_value(&timer));
-            if (os_event.status == osEventMessage ){
-                rsp_msg = *(task_msg_t *)&os_event.value.v;
-                if (rsp_msg.type == RSP_CALIBRATION_FULL) {
-                    result[i] = (rsp_msg.value & 0xFF ) == SCALE_TASK_SUCCESS ? PDU_SUCCESS_VALUE : PDU_FAILURE_VALUE;
-                    break;
-                }
+        os_event = osMessageGet(contex->task[i].calibration_full_msg_q_id,utils_timer_value(&timer));
+        if (os_event.status == osEventMessage ){
+            rsp_msg = *(task_msg_t *)&os_event.value.v;
+            if (rsp_msg.type == RSP_CALIBRATION_FULL) {
+                result[i] = (rsp_msg.value & 0xFF ) == SCALE_TASK_SUCCESS ? PDU_SUCCESS_VALUE : PDU_FAILURE_VALUE;
             } 
         } 
     }

@@ -47,7 +47,7 @@ typedef enum
 #define  PDU_FAILURE_VALUE             0x01
 /*协议时间*/
 #define  ADU_WAIT_TIMEOUT              osWaitForever
-#define  ADU_FRAME_TIMEOUT             2
+#define  ADU_FRAME_TIMEOUT             3
 #define  ADU_RSP_TIMEOUT               200
 #define  ADU_SEND_TIMEOUT              5
 
