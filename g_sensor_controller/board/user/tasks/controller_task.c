@@ -270,9 +270,14 @@ static int request_net_weight(const scale_contex_t *contex,const uint8_t addr,ui
                 weight = rsp_msg.value == SCALE_TASK_NET_WEIGHT_ERR_VALUE ? PDU_NET_WEIGHT_ERR_VALUE : rsp_msg.value;             
             } 
 
-        } 
-        value[i * 2] = weight & 0xFF;
-        value[i * 2 + 1] = weight >> 8;    
+        }
+        if (addr == 0) {
+            value[i * 2] = weight & 0xFF;
+            value[i * 2 + 1] = weight >> 8;  
+        } else {
+            value[0] = weight & 0xFF;
+            value[1] = weight >> 8;    
+        }
     }
            
     return (end - start) * 2;
