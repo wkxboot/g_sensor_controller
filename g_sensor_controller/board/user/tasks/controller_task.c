@@ -60,7 +60,7 @@ typedef enum
 /*协议时间*/
 #define  ADU_WAIT_TIMEOUT              osWaitForever
 #define  ADU_FRAME_TIMEOUT             3
-#define  ADU_RSP_TIMEOUT               200
+#define  ADU_RSP_TIMEOUT               25
 #define  ADU_SEND_TIMEOUT              5
 
 
@@ -619,7 +619,6 @@ static int parse_pdu(uint8_t *pdu,uint8_t size,uint8_t *adu)
         break;
     case PDU_CODE_NET_WEIGHT:
         scale_addr = pdu[pdu_offset ++];
-        adu[adu_size ++] = scale_addr;
 
         if (pdu_offset != size ) {
             log_error("pdu size:%d of net weight err.\r\n",size);
@@ -634,7 +633,6 @@ static int parse_pdu(uint8_t *pdu,uint8_t size,uint8_t *adu)
         break;
      case PDU_CODE_REMOVE_TARE_WEIGHT:
         scale_addr = pdu[pdu_offset ++];
-        adu[adu_size ++] = scale_addr;
 
         if (pdu_offset != size ) {
             log_error("pdu size:%d of remove tare weight err.\r\n",size);
@@ -649,7 +647,7 @@ static int parse_pdu(uint8_t *pdu,uint8_t size,uint8_t *adu)
         break;   
      case PDU_CODE_CALIBRATION_ZERO:
         scale_addr = pdu[pdu_offset ++];
-        adu[adu_size ++] = scale_addr;
+
         calibration_weight = pdu[pdu_offset ++];
         calibration_weight|= (uint16_t)pdu[pdu_offset ++] << 8;
         if (pdu_offset != size) {
@@ -666,7 +664,7 @@ static int parse_pdu(uint8_t *pdu,uint8_t size,uint8_t *adu)
         break;  
      case PDU_CODE_CALIBRATION_FULL:
         scale_addr = pdu[pdu_offset ++];
-        adu[adu_size ++] = scale_addr;
+
         calibration_weight = pdu[pdu_offset ++];
         calibration_weight|= (uint16_t)pdu[pdu_offset ++] << 8;
         if (pdu_offset != size) {
