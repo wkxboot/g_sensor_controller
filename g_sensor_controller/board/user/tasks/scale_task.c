@@ -48,7 +48,10 @@ typedef enum
 /*协议时间*/
 #define  ADU_WAIT_TIMEOUT              osWaitForever
 #define  ADU_FRAME_TIMEOUT             3
-#define  ADU_RSP_TIMEOUT               20
+#define  ADU_QUERY_WEIGHT_TIMEOUT      25
+#define  ADU_REMOVE_TARE_TIMEOUT       250
+#define  ADU_CALIBRATION_ZERO_TIMEOUT  250
+#define  ADU_CALIBRATION_FULL_TIMEOUT  250
 #define  ADU_SEND_TIMEOUT              5
 
 
@@ -370,11 +373,12 @@ static int parse_pdu(const uint8_t *pdu,uint8_t size,const uint8_t addr,const ui
 * @param value 操作值指针
 * @param size 操作值数量
 * @param rsp 回应缓存
+* @param timeout 超时
 * @return > 0 回应的数据量
 * @return -1 失败
 * @note
 */
-static int scale_task_poll(int handle,uint8_t addr,uint8_t code,uint8_t *value,uint8_t size,uint8_t *rsp)
+static int scale_task_poll(int handle,uint8_t addr,uint8_t code,uint8_t *value,uint8_t size,uint8_t *rsp,uint32_t timeout)
 {
     int rc ;
     uint8_t adu_send[ADU_SIZE_MAX];
@@ -382,18 +386,18 @@ static int scale_task_poll(int handle,uint8_t addr,uint8_t code,uint8_t *value,u
 
     utils_timer_t timer;
 
-    utils_timer_init(&timer,ADU_RSP_TIMEOUT,false);
+    utils_timer_init(&timer,timeout,false);
     rc = build_adu(adu_send,addr,code,value,size);
     if (rc <= 0) {
         return -1;
     }
 
-    rc = send_adu(handle,adu_send,rc,ADU_SEND_TIMEOUT);
+    rc = send_adu(handle,adu_send,rc,utils_timer_value(&timer));
     if (rc != 0) {
         return -1;
     }
 
-    rc = receive_adu(handle,adu_recv,ADU_RSP_TIMEOUT);
+    rc = receive_adu(handle,adu_recv,utils_timer_value(&timer));
     if (rc <= 0) {
         /*清空接收缓存*/
         serial_flush(handle);
@@ -425,7 +429,7 @@ static int scale_task_process_net_weight_msg(int handle,int8_t addr,osMessageQId
     uint8_t req_value[2];
     uint8_t rsp_value[2];
 
-    rc = scale_task_poll(handle,addr,PDU_CODE_NET_WEIGHT,req_value,0,rsp_value);
+    rc = scale_task_poll(handle,addr,PDU_CODE_NET_WEIGHT,req_value,0,rsp_value,ADU_QUERY_WEIGHT_TIMEOUT);
     if (rc < 0) {
         return -1;
     }
@@ -461,7 +465,7 @@ static int scale_task_process_remove_tare_weight_msg(int handle,int8_t addr,osMe
     uint8_t req_value[2];
     uint8_t rsp_value[2];
 
-    rc = scale_task_poll(handle,addr,PDU_CODE_REMOVE_TARE_WEIGHT,req_value,0,rsp_value);
+    rc = scale_task_poll(handle,addr,PDU_CODE_REMOVE_TARE_WEIGHT,req_value,0,rsp_value,ADU_REMOVE_TARE_TIMEOUT);
     if (rc < 0) {
         return -1;
     }
@@ -496,7 +500,7 @@ static int scale_task_process_calibration_zero_msg(int handle,int8_t addr,int16_
 
     req_value[0] = weight & 0xFF;
     req_value[1] = weight >> 8;
-    rc = scale_task_poll(handle,addr,PDU_CODE_CALIBRATION_ZERO,req_value,2,rsp_value);
+    rc = scale_task_poll(handle,addr,PDU_CODE_CALIBRATION_ZERO,req_value,2,rsp_value,ADU_CALIBRATION_ZERO_TIMEOUT);
     if (rc < 0) {
         return -1;
     }
@@ -530,7 +534,7 @@ static int scale_task_process_calibration_full_msg(int handle,int8_t addr,int16_
 
     req_value[0] = weight & 0xFF;
     req_value[1] = weight >> 8;
-    rc = scale_task_poll(handle,addr,PDU_CODE_CALIBRATION_FULL,req_value,2,rsp_value);
+    rc = scale_task_poll(handle,addr,PDU_CODE_CALIBRATION_FULL,req_value,2,rsp_value,ADU_CALIBRATION_FULL_TIMEOUT);
     if (rc < 0) {
         return -1;
     }
