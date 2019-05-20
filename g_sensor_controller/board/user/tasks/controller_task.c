@@ -60,7 +60,10 @@ typedef enum
 /*协议时间*/
 #define  ADU_WAIT_TIMEOUT              osWaitForever
 #define  ADU_FRAME_TIMEOUT             3
-#define  ADU_RSP_TIMEOUT               25
+#define  ADU_QUERY_WEIGHT_TIMEOUT      25
+#define  ADU_REMOVE_TARE_TIMEOUT       250
+#define  ADU_CALIBRATION_ZERO_TIMEOUT  250
+#define  ADU_CALIBRATION_FULL_TIMEOUT  250
 #define  ADU_SEND_TIMEOUT              5
 
 
@@ -247,7 +250,7 @@ static int request_net_weight(const scale_contex_t *contex,const uint8_t addr,ui
     uint16_t weight;
 
     req_msg.type = REQ_NET_WEIGHT;
-    utils_timer_init(&timer,ADU_RSP_TIMEOUT,false);
+    utils_timer_init(&timer,ADU_QUERY_WEIGHT_TIMEOUT,false);
 
     /*给对应的电子秤任务发送消息*/
     rc = find_scale_index(contex,addr,&start,&end);
@@ -303,7 +306,7 @@ static int request_remove_tare_weight(const scale_contex_t *contex,const uint8_t
     uint8_t result[SCALE_CNT_MAX];
 
     req_msg.type = REQ_REMOVE_TARE_WEIGHT;
-    utils_timer_init(&timer,ADU_RSP_TIMEOUT,false);
+    utils_timer_init(&timer,ADU_REMOVE_TARE_TIMEOUT,false);
 
     /*给对应的电子秤任务发送消息*/
     rc = find_scale_index(contex,addr,&start,&end);
@@ -359,7 +362,7 @@ static int request_calibration_zero(const scale_contex_t *contex,const uint8_t a
 
     req_msg.type = REQ_CALIBRATION_ZERO;
     req_msg.value = weight;
-    utils_timer_init(&timer,ADU_RSP_TIMEOUT,false);
+    utils_timer_init(&timer,ADU_CALIBRATION_ZERO_TIMEOUT,false);
 
     /*给对应的电子秤任务发送消息*/
     rc = find_scale_index(contex,addr,&start,&end);
@@ -415,7 +418,7 @@ static int request_calibration_full(const scale_contex_t *contex,const uint8_t a
 
     req_msg.type = REQ_CALIBRATION_FULL;
     req_msg.value = weight;
-    utils_timer_init(&timer,ADU_RSP_TIMEOUT,false);
+    utils_timer_init(&timer,ADU_CALIBRATION_FULL_TIMEOUT,false);
 
     /*给对应的电子秤任务发送消息*/
     rc = find_scale_index(contex,addr,&start,&end);
