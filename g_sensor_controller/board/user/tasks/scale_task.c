@@ -49,9 +49,9 @@ typedef enum
 #define  ADU_WAIT_TIMEOUT              osWaitForever
 #define  ADU_FRAME_TIMEOUT             3
 #define  ADU_QUERY_WEIGHT_TIMEOUT      25
-#define  ADU_REMOVE_TARE_TIMEOUT       250
-#define  ADU_CALIBRATION_ZERO_TIMEOUT  250
-#define  ADU_CALIBRATION_FULL_TIMEOUT  250
+#define  ADU_REMOVE_TARE_TIMEOUT       500
+#define  ADU_CALIBRATION_ZERO_TIMEOUT  500
+#define  ADU_CALIBRATION_FULL_TIMEOUT  500
 #define  ADU_SEND_TIMEOUT              5
 
 
