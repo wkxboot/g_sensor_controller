@@ -2,5 +2,5 @@
 !/g_sensor_controller/board/iar/g_sensor_controller.eww
 !/g_sensor_controller/board/iar/g_sensor_controller.ewd
 !/g_sensor_controller/board/iar/g_sensor_controller.ewp
-!/g_sensor_controller/board/iar/LPC5460xJ512.icf
+!/g_sensor_controller/board/iar/g_sensor_controller.icf
 !/g_sensor_controller/board/iar/startup_LPC54606.s
