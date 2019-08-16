@@ -1,35 +1,9 @@
 /*
- * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- *  that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_emc.h"
@@ -43,21 +17,20 @@
 #define FSL_COMPONENT_ID "platform.drivers.emc"
 #endif
 
-
 /*! @brief Define macros for EMC driver. */
-#define EMC_REFRESH_CLOCK_PARAM   (16U)
-#define EMC_SDRAM_WAIT_CYCLES  (2000U)
-#define EMC_DYNCTL_COLUMNBASE_OFFSET  (0U)
-#define EMC_DYNCTL_COLUMNBASE_MASK    (0x3U)
-#define EMC_DYNCTL_COLUMNPLUS_OFFSET  (3U)
-#define EMC_DYNCTL_COLUMNPLUS_MASK    (0x18U)
-#define EMC_DYNCTL_BUSWIDTH_MASK      (0x80U)
-#define EMC_DYNCTL_BUSADDRMAP_MASK    (0x20U)
+#define EMC_REFRESH_CLOCK_PARAM (16U)
+#define EMC_SDRAM_WAIT_CYCLES (2000U)
+#define EMC_DYNCTL_COLUMNBASE_OFFSET (0U)
+#define EMC_DYNCTL_COLUMNBASE_MASK (0x3U)
+#define EMC_DYNCTL_COLUMNPLUS_OFFSET (3U)
+#define EMC_DYNCTL_COLUMNPLUS_MASK (0x18U)
+#define EMC_DYNCTL_BUSWIDTH_MASK (0x80U)
+#define EMC_DYNCTL_BUSADDRMAP_MASK (0x20U)
 #define EMC_DYNCTL_DEVBANKS_BITS_MASK (0x1cU)
-#define EMC_SDRAM_BANKCS_BA0_MASK   (uint32_t)(0x2000)
-#define EMC_SDRAM_BANKCS_BA1_MASK   (uint32_t)(0x4000)
-#define EMC_SDRAM_BANKCS_BA_MASK    (EMC_SDRAM_BANKCS_BA0_MASK|EMC_SDRAM_BANKCS_BA1_MASK)
-#define EMC_DIV_ROUND_UP(n, m)   (((n) + (m) -1)/(m))
+#define EMC_SDRAM_BANKCS_BA0_MASK (uint32_t)(0x2000)
+#define EMC_SDRAM_BANKCS_BA1_MASK (uint32_t)(0x4000)
+#define EMC_SDRAM_BANKCS_BA_MASK (EMC_SDRAM_BANKCS_BA0_MASK | EMC_SDRAM_BANKCS_BA1_MASK)
+#define EMC_DIV_ROUND_UP(n, m) (((n) + (m)-1) / (m))
 
 /*******************************************************************************
  * Prototypes
@@ -94,14 +67,21 @@ static uint32_t EMC_ModeOffset(uint32_t addrMap);
  * Variables
  ******************************************************************************/
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to EMC clocks for each instance. */
 static const clock_ip_name_t s_EMCClock[FSL_FEATURE_SOC_EMC_COUNT] = EMC_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#if !(defined(FSL_FEATURE_EMC_HAS_NO_RESET) && FSL_FEATURE_EMC_HAS_NO_RESET)
+/*! @brief Pointers to EMC resets for each instance. */
+static const reset_ip_name_t s_emcResets[] = EMC_RSTS;
+#endif
 
 /*! @brief Pointers to EMC bases for each instance. */
-static EMC_Type *const s_EMCBases[] = EMC_BASE_PTRS;
+static const EMC_Type *const s_EMCBases[] = EMC_BASE_PTRS;
 
 /*! @brief Define the start address for each chip controlled by EMC. */
-static uint32_t s_EMCDYCSBases[] = EMC_DYCS_ADDRESS;
+static const uint32_t s_EMCDYCSBases[] = EMC_DYCS_ADDRESS;
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -194,25 +174,41 @@ static uint32_t EMC_ModeOffset(uint32_t addrMap)
     {
         if (!(addrMap & EMC_DYNCTL_DEVBANKS_BITS_MASK))
         {
-          offset += 1;
+            offset += 1;
         }
         else
         {
-          offset += 2;
+            offset += 2;
         }
     }
 
     return offset;
 }
 
+/*!
+ * brief Initializes the basic for EMC.
+ * This function ungates the EMC clock, initializes the emc system configure
+ * and enable the EMC module. This function must be called in the first step to initialize
+ * the external memory.
+ *
+ * param base EMC peripheral base address.
+ * param config The EMC basic configuration.
+ */
 void EMC_Init(EMC_Type *base, emc_basic_config_t *config)
 {
-    /* Enable EMC clock. */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Enable the clock. */
     CLOCK_EnableClock((s_EMCClock[EMC_GetInstance(base)]));
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#if !(defined(FSL_FEATURE_EMC_HAS_NO_RESET) && FSL_FEATURE_EMC_HAS_NO_RESET)
+    /* Reset the EMC module */
+    RESET_PeripheralReset(s_emcResets[EMC_GetInstance(base)]);
+#endif
 
     /* Reset the EMC. */
     SYSCON->PRESETCTRL[2] |= SYSCON_PRESETCTRL_EMC_RESET_MASK;
-    SYSCON->PRESETCTRL[2] &= ~ SYSCON_PRESETCTRL_EMC_RESET_MASK;
+    SYSCON->PRESETCTRL[2] &= ~SYSCON_PRESETCTRL_EMC_RESET_MASK;
 
     /* Set the EMC sytem configure. */
     SYSCON->EMCCLKDIV = SYSCON_EMCCLKDIV_DIV(config->emcClkDiv);
@@ -225,8 +221,25 @@ void EMC_Init(EMC_Type *base, emc_basic_config_t *config)
     base->CONTROL = EMC_CONTROL_E_MASK;
 }
 
-void EMC_DynamicMemInit(EMC_Type *base, emc_dynamic_timing_config_t *timing,
-        emc_dynamic_chip_config_t *config, uint32_t totalChips)
+/*!
+ * brief Initializes the dynamic memory controller.
+ * This function initializes the dynamic memory controller in external memory controller.
+ * This function must be called after EMC_Init and before accessing the external dynamic memory.
+ *
+ * param base EMC peripheral base address.
+ * param timing The timing and latency for dynamica memory controller setting. It shall
+ *        be used for all dynamica memory chips, threfore the worst timing value for all
+ *        used chips must be given.
+ * param configure The EMC dynamic memory controller chip independent configuration pointer.
+ *       This configuration pointer is actually pointer to a configration array. the array number
+ *       depends on the "totalChips".
+ * param totalChips The total dynamic memory chip numbers been used or the length of the
+ *        "emc_dynamic_chip_config_t" type memory.
+ */
+void EMC_DynamicMemInit(EMC_Type *base,
+                        emc_dynamic_timing_config_t *timing,
+                        emc_dynamic_chip_config_t *config,
+                        uint32_t totalChips)
 {
     assert(config);
     assert(timing);
@@ -240,16 +253,16 @@ void EMC_DynamicMemInit(EMC_Type *base, emc_dynamic_timing_config_t *timing,
     emc_dynamic_chip_config_t *dynamicConfig = config;
 
     /* Setting for dynamic memory controller chip independent configuration. */
-    for (count = 0; (count < totalChips) && (dynamicConfig != NULL); count ++)
+    for (count = 0; (count < totalChips) && (dynamicConfig != NULL); count++)
     {
-        base->DYNAMIC[dynamicConfig->chipIndex].DYNAMICCONFIG  = EMC_DYNAMIC_DYNAMICCONFIG_MD(dynamicConfig->dynamicDevice) |
-            EMC_ADDRMAP(dynamicConfig->devAddrMap);
+        base->DYNAMIC[dynamicConfig->chipIndex].DYNAMICCONFIG =
+            EMC_DYNAMIC_DYNAMICCONFIG_MD(dynamicConfig->dynamicDevice) | EMC_ADDRMAP(dynamicConfig->devAddrMap);
         /* Abstract CAS latency from the sdram mode reigster setting values. */
         casLatency = (dynamicConfig->sdramModeReg & EMC_SDRAM_MODE_CL_MASK) >> EMC_SDRAM_MODE_CL_SHIFT;
-        base->DYNAMIC[dynamicConfig->chipIndex].DYNAMICRASCAS  =  EMC_DYNAMIC_DYNAMICRASCAS_RAS(dynamicConfig->rAS_Nclk) |
-        EMC_DYNAMIC_DYNAMICRASCAS_CAS(casLatency);
+        base->DYNAMIC[dynamicConfig->chipIndex].DYNAMICRASCAS =
+            EMC_DYNAMIC_DYNAMICRASCAS_RAS(dynamicConfig->rAS_Nclk) | EMC_DYNAMIC_DYNAMICRASCAS_CAS(casLatency);
 
-        dynamicConfig ++;
+        dynamicConfig++;
     }
 
     /* Configure the Dynamic Memory controller timing/latency for all chips. */
@@ -261,83 +274,98 @@ void EMC_DynamicMemInit(EMC_Type *base, emc_dynamic_timing_config_t *timing,
     base->DYNAMICDAL = EMC_CalculateTimerCycles(base, timing->tDal_Ns, 0) & EMC_DYNAMICDAL_TDAL_MASK;
     base->DYNAMICWR = EMC_CalculateTimerCycles(base, timing->tWr_Ns, 1) & EMC_DYNAMICWR_TWR_MASK;
     base->DYNAMICRC = EMC_CalculateTimerCycles(base, timing->tRc_Ns, 1) & EMC_DYNAMICRC_TRC_MASK;
-    base->DYNAMICRFC = EMC_CalculateTimerCycles(base, timing->tRfc_Ns, 1) &EMC_DYNAMICRFC_TRFC_MASK;
+    base->DYNAMICRFC = EMC_CalculateTimerCycles(base, timing->tRfc_Ns, 1) & EMC_DYNAMICRFC_TRFC_MASK;
     base->DYNAMICXSR = EMC_CalculateTimerCycles(base, timing->tXsr_Ns, 1) & EMC_DYNAMICXSR_TXSR_MASK;
     base->DYNAMICRRD = EMC_CalculateTimerCycles(base, timing->tRrd_Ns, 1) & EMC_DYNAMICRRD_TRRD_MASK;
-    base->DYNAMICMRD = EMC_DYNAMICMRD_TMRD((timing->tMrd_Nclk > 0)?timing->tMrd_Nclk - 1:0);
+    base->DYNAMICMRD = EMC_DYNAMICMRD_TMRD((timing->tMrd_Nclk > 0) ? timing->tMrd_Nclk - 1 : 0);
 
     /* Initialize the SDRAM.*/
-    for (count = 0; count < EMC_SDRAM_WAIT_CYCLES;  count ++)
+    for (count = 0; count < EMC_SDRAM_WAIT_CYCLES; count++)
     {
     }
     /* Step 2. issue nop command. */
-    base->DYNAMICCONTROL  = 0x00000183;
-    for (count = 0; count < EMC_SDRAM_WAIT_CYCLES;  count ++)
+    base->DYNAMICCONTROL = 0x00000183;
+    for (count = 0; count < EMC_SDRAM_WAIT_CYCLES; count++)
     {
     }
     /* Step 3. issue precharge all command. */
-    base->DYNAMICCONTROL  = 0x00000103;
+    base->DYNAMICCONTROL = 0x00000103;
 
     /* Step 4. issue two auto-refresh command. */
     base->DYNAMICREFRESH = 2;
-    for (count = 0; count < EMC_SDRAM_WAIT_CYCLES/2; count ++)
+    for (count = 0; count < EMC_SDRAM_WAIT_CYCLES / 2; count++)
     {
     }
 
-    base->DYNAMICREFRESH = EMC_CalculateTimerCycles(base, timing->refreshPeriod_Nanosec, 0)/EMC_REFRESH_CLOCK_PARAM;
+    base->DYNAMICREFRESH = EMC_CalculateTimerCycles(base, timing->refreshPeriod_Nanosec, 0) / EMC_REFRESH_CLOCK_PARAM;
 
     /* Step 5. issue a mode command and set the mode value. */
-    base->DYNAMICCONTROL  = 0x00000083;
+    base->DYNAMICCONTROL = 0x00000083;
 
     /* Calculate the mode settings here and to reach the 8 auto-refresh time requirement. */
     dynamicConfig = config;
-    for (count = 0; (count < totalChips) && (dynamicConfig != NULL); count ++)
+    for (count = 0; (count < totalChips) && (dynamicConfig != NULL); count++)
     {
         /* Get the shift value first. */
         offset = EMC_ModeOffset(dynamicConfig->devAddrMap);
         addr = (s_EMCDYCSBases[dynamicConfig->chipIndex] |
-            ((uint32_t)(dynamicConfig->sdramModeReg & ~EMC_SDRAM_BANKCS_BA_MASK ) << offset));
+                ((uint32_t)(dynamicConfig->sdramModeReg & ~EMC_SDRAM_BANKCS_BA_MASK) << offset));
         /* Set the right mode setting value. */
         data = *(volatile uint32_t *)addr;
         data = data;
-        dynamicConfig ++;
+        dynamicConfig++;
     }
 
     if (config->dynamicDevice)
     {
         /* Add extended mode register if the low-power sdram is used. */
-        base->DYNAMICCONTROL  = 0x00000083;
+        base->DYNAMICCONTROL = 0x00000083;
         /* Calculate the mode settings for extended mode register. */
         dynamicConfig = config;
-        for (count = 0; (count < totalChips) && (dynamicConfig != NULL); count ++)
+        for (count = 0; (count < totalChips) && (dynamicConfig != NULL); count++)
         {
             /* Get the shift value first. */
             offset = EMC_ModeOffset(dynamicConfig->devAddrMap);
-            addr = (s_EMCDYCSBases[dynamicConfig->chipIndex] | (((uint32_t)(dynamicConfig->sdramExtModeReg & ~EMC_SDRAM_BANKCS_BA_MASK) |
-                EMC_SDRAM_BANKCS_BA1_MASK) << offset));
+            addr =
+                (s_EMCDYCSBases[dynamicConfig->chipIndex] |
+                 (((uint32_t)(dynamicConfig->sdramExtModeReg & ~EMC_SDRAM_BANKCS_BA_MASK) | EMC_SDRAM_BANKCS_BA1_MASK)
+                  << offset));
             /* Set the right mode setting value. */
             data = *(volatile uint32_t *)addr;
             data = data;
-            dynamicConfig ++;
+            dynamicConfig++;
         }
     }
 
     /* Step 6. issue normal operation command. */
-    base->DYNAMICCONTROL  = 0x00000000; /* Issue NORMAL command */
+    base->DYNAMICCONTROL = 0x00000000; /* Issue NORMAL command */
 
     /* The buffer shall be disabled when do the sdram initialization and
      * enabled after the initialization during normal opeation.
      */
     dynamicConfig = config;
-    for (count = 0; (count < totalChips) && (dynamicConfig != NULL); count ++)
+    for (count = 0; (count < totalChips) && (dynamicConfig != NULL); count++)
     {
         base->DYNAMIC[dynamicConfig->chipIndex].DYNAMICCONFIG |= EMC_DYNAMIC_DYNAMICCONFIG_B_MASK;
-        dynamicConfig ++;
+        dynamicConfig++;
     }
 }
 
-void EMC_StaticMemInit(EMC_Type *base, uint32_t *extWait_Ns,
-         emc_static_chip_config_t *config, uint32_t totalChips)
+/*!
+ * brief Initializes the static memory controller.
+ * This function initializes the static memory controller in external memory controller.
+ * This function must be called after EMC_Init and before accessing the external static memory.
+ *
+ * param base EMC peripheral base address.
+ * param extWait_Ns The extended wait timeout or the read/write transfer time.
+ *        This is common for all static memory chips and set with NULL if not required.
+ * param configure The EMC static memory controller chip independent configuration pointer.
+ *       This configuration pointer is actually pointer to a configration array. the array number
+ *       depends on the "totalChips".
+ * param totalChips The total static memory chip numbers been used or the length of the
+ *        "emc_static_chip_config_t" type memory.
+ */
+void EMC_StaticMemInit(EMC_Type *base, uint32_t *extWait_Ns, emc_static_chip_config_t *config, uint32_t totalChips)
 {
     assert(config);
 
@@ -347,22 +375,20 @@ void EMC_StaticMemInit(EMC_Type *base, uint32_t *extWait_Ns,
     /* Initialize extended wait. */
     if (extWait_Ns)
     {
-        for (count = 0; (count < totalChips) && (staticConfig != NULL); count ++)
+        for (count = 0; (count < totalChips) && (staticConfig != NULL); count++)
         {
             assert(staticConfig->specailConfig & kEMC_AsynchronosPageEnable);
         }
 
         base->STATICEXTENDEDWAIT = EMC_CalculateTimerCycles(base, *extWait_Ns, 1);
-        staticConfig ++;
+        staticConfig++;
     }
 
     /* Initialize the static memory chip specific configure. */
     staticConfig = config;
-    for (count = 0; (count < totalChips) && (staticConfig != NULL); count ++)
+    for (count = 0; (count < totalChips) && (staticConfig != NULL); count++)
     {
-
-        base->STATIC[staticConfig->chipIndex].STATICCONFIG =
-            (staticConfig->specailConfig | staticConfig->memWidth);
+        base->STATIC[staticConfig->chipIndex].STATICCONFIG = (staticConfig->specailConfig | staticConfig->memWidth);
         base->STATIC[staticConfig->chipIndex].STATICWAITWEN =
             EMC_CalculateTimerCycles(base, staticConfig->tWaitWriteEn_Ns, 1);
         base->STATIC[staticConfig->chipIndex].STATICWAITOEN =
@@ -376,15 +402,24 @@ void EMC_StaticMemInit(EMC_Type *base, uint32_t *extWait_Ns,
         base->STATIC[staticConfig->chipIndex].STATICWAITTURN =
             EMC_CalculateTimerCycles(base, staticConfig->tWaitTurn_Ns, 1);
 
-        staticConfig ++;
+        staticConfig++;
     }
 }
 
+/*!
+ * brief Deinitializes the EMC module and gates the clock.
+ * This function gates the EMC controller clock. As a result, the EMC
+ * module doesn't work after calling this function.
+ *
+ * param base EMC peripheral base address.
+ */
 void EMC_Deinit(EMC_Type *base)
 {
     /* Deinit the EMC. */
     base->CONTROL &= ~EMC_CONTROL_E_MASK;
 
-    /* Disable EMC clock. */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Disable the clock. */
     CLOCK_DisableClock(s_EMCClock[EMC_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }

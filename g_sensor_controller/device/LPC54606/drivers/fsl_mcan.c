@@ -1,35 +1,9 @@
 /*
- * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- *  that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_mcan.h"
@@ -42,7 +16,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.mcan"
 #endif
-
 
 #define MCAN_TIME_QUANTA_NUM (16U)
 
@@ -154,6 +127,11 @@ static const IRQn_Type s_mcanIRQ[][2] = CAN_IRQS;
 static const clock_ip_name_t s_mcanClock[] = MCAN_CLOCKS;
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
+#if !(defined(FSL_FEATURE_MCAN_HAS_NO_RESET) && FSL_FEATURE_MCAN_HAS_NO_RESET)
+/*! @brief Pointers to MCAN resets for each instance. */
+static const reset_ip_name_t s_mcanResets[] = MCAN_RSTS;
+#endif
+
 /* MCAN ISR for transactional APIs. */
 static mcan_isr_t s_mcanIsr;
 
@@ -255,12 +233,39 @@ static void MCAN_SetBaudRateFD(CAN_Type *base, uint32_t sourceClock_Hz, uint32_t
 }
 #endif
 
+/*!
+ * brief Initializes an MCAN instance.
+ *
+ * This function initializes the MCAN module with user-defined settings.
+ * This example shows how to set up the mcan_config_t parameters and how
+ * to call the MCAN_Init function by passing in these parameters.
+ *  code
+ *   mcan_config_t config;
+ *   config->baudRateA = 500000U;
+ *   config->baudRateD = 500000U;
+ *   config->enableCanfdNormal = false;
+ *   config->enableCanfdSwitch = false;
+ *   config->enableLoopBackInt = false;
+ *   config->enableLoopBackExt = false;
+ *   config->enableBusMon = false;
+ *   MCAN_Init(CANFD0, &config, 8000000UL);
+ *   endcode
+ *
+ * param base MCAN peripheral base address.
+ * param config Pointer to the user-defined configuration structure.
+ * param sourceClock_Hz MCAN Protocol Engine clock source frequency in Hz.
+ */
 void MCAN_Init(CAN_Type *base, const mcan_config_t *config, uint32_t sourceClock_Hz)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable MCAN clock. */
     CLOCK_EnableClock(s_mcanClock[MCAN_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#if !(defined(FSL_FEATURE_MCAN_HAS_NO_RESET) && FSL_FEATURE_MCAN_HAS_NO_RESET)
+    /* Reset the MCAN module */
+    RESET_PeripheralReset(s_mcanResets[MCAN_GetInstance(base)]);
+#endif
 
     MCAN_Reset(base);
 
@@ -296,6 +301,13 @@ void MCAN_Init(CAN_Type *base, const mcan_config_t *config, uint32_t sourceClock
 #endif
 }
 
+/*!
+ * brief Deinitializes an MCAN instance.
+ *
+ * This function deinitializes the MCAN module.
+ *
+ * param base MCAN peripheral base address.
+ */
 void MCAN_Deinit(CAN_Type *base)
 {
     /* Reset all Register Contents. */
@@ -307,6 +319,14 @@ void MCAN_Deinit(CAN_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief MCAN enters normal mode.
+ *
+ * After initialization, INIT bit in CCCR register must be cleared to enter
+ * normal mode thus synchronizes to the CAN bus and ready for communication.
+ *
+ * param base MCAN peripheral base address.
+ */
 void MCAN_EnterNormalMode(CAN_Type *base)
 {
     /* Reset INIT bit to enter normal mode. */
@@ -316,10 +336,28 @@ void MCAN_EnterNormalMode(CAN_Type *base)
     }
 }
 
+/*!
+ * brief Gets the default configuration structure.
+ *
+ * This function initializes the MCAN configuration structure to default values. The default
+ * values are as follows.
+ *   config->baudRateA = 500000U;
+ *   config->baudRateD = 500000U;
+ *   config->enableCanfdNormal = false;
+ *   config->enableCanfdSwitch = false;
+ *   config->enableLoopBackInt = false;
+ *   config->enableLoopBackExt = false;
+ *   config->enableBusMon = false;
+ *
+ * param config Pointer to the MCAN configuration structure.
+ */
 void MCAN_GetDefaultConfig(mcan_config_t *config)
 {
     /* Assertion. */
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     /* Initialize MCAN Module config struct with default value. */
     config->baudRateA = 500000U;
@@ -332,6 +370,20 @@ void MCAN_GetDefaultConfig(mcan_config_t *config)
 }
 
 #if (defined(FSL_FEATURE_CAN_SUPPORT_CANFD) && FSL_FEATURE_CAN_SUPPORT_CANFD)
+/*!
+ * brief Sets the MCAN protocol data phase timing characteristic.
+ *
+ * This function gives user settings to CAN bus timing characteristic.
+ * The function is for an experienced user. For less experienced users, call
+ * the MCAN_Init() and fill the baud rate field with a desired value.
+ * This provides the default data phase timing characteristics.
+ *
+ * Note that calling MCAN_SetArbitrationTimingConfig() overrides the baud rate
+ * set in MCAN_Init().
+ *
+ * param base MCAN peripheral base address.
+ * param config Pointer to the timing configuration structure.
+ */
 void MCAN_SetDataTimingConfig(CAN_Type *base, const mcan_timing_config_t *config)
 {
     /* Assertion. */
@@ -346,6 +398,20 @@ void MCAN_SetDataTimingConfig(CAN_Type *base, const mcan_timing_config_t *config
 }
 #endif /* FSL_FEATURE_CAN_SUPPORT_CANFD */
 
+/*!
+ * brief Sets the MCAN protocol arbitration phase timing characteristic.
+ *
+ * This function gives user settings to CAN bus timing characteristic.
+ * The function is for an experienced user. For less experienced users, call
+ * the MCAN_Init() and fill the baud rate field with a desired value.
+ * This provides the default arbitration phase timing characteristics.
+ *
+ * Note that calling MCAN_SetArbitrationTimingConfig() overrides the baud rate
+ * set in MCAN_Init().
+ *
+ * param base MCAN peripheral base address.
+ * param config Pointer to the timing configuration structure.
+ */
 void MCAN_SetArbitrationTimingConfig(CAN_Type *base, const mcan_timing_config_t *config)
 {
     /* Assertion. */
@@ -359,6 +425,15 @@ void MCAN_SetArbitrationTimingConfig(CAN_Type *base, const mcan_timing_config_t 
                    CAN_NBTP_NTSEG1(config->seg1) | CAN_NBTP_NTSEG2(config->seg2));
 }
 
+/*!
+ * brief Set filter configuration.
+ *
+ * This function sets remote and non masking frames in global filter configuration,
+ * also the start address, list size in standard/extended ID filter configuration.
+ *
+ * param base MCAN peripheral base address.
+ * param config The MCAN filter configuration.
+ */
 void MCAN_SetFilterConfig(CAN_Type *base, const mcan_frame_filter_config_t *config)
 {
     /* Set global configuration of remote/nonmasking frames, set filter address and list size. */
@@ -374,6 +449,15 @@ void MCAN_SetFilterConfig(CAN_Type *base, const mcan_frame_filter_config_t *conf
     }
 }
 
+/*!
+ * brief Configures an MCAN receive fifo 0 buffer.
+ *
+ * This function sets start address, element size, watermark, operation mode
+ * and datafield size of the recieve fifo 0.
+ *
+ * param base MCAN peripheral base address.
+ * param config The receive fifo 0 configuration structure.
+ */
 void MCAN_SetRxFifo0Config(CAN_Type *base, const mcan_rx_fifo_config_t *config)
 {
     /* Set Rx FIFO 0 start address, element size, watermark, operation mode. */
@@ -383,6 +467,15 @@ void MCAN_SetRxFifo0Config(CAN_Type *base, const mcan_rx_fifo_config_t *config)
     base->RXESC |= CAN_RXESC_F0DS(config->datafieldSize);
 }
 
+/*!
+ * brief Configures an MCAN receive fifo 1 buffer.
+ *
+ * This function sets start address, element size, watermark, operation mode
+ * and datafield size of the recieve fifo 1.
+ *
+ * param base MCAN peripheral base address.
+ * param config The receive fifo 1 configuration structure.
+ */
 void MCAN_SetRxFifo1Config(CAN_Type *base, const mcan_rx_fifo_config_t *config)
 {
     /* Set Rx FIFO 1 start address, element size, watermark, operation mode. */
@@ -392,6 +485,14 @@ void MCAN_SetRxFifo1Config(CAN_Type *base, const mcan_rx_fifo_config_t *config)
     base->RXESC |= CAN_RXESC_F1DS(config->datafieldSize);
 }
 
+/*!
+ * brief Configures an MCAN receive buffer.
+ *
+ * This function sets start address and datafield size of the recieve buffer.
+ *
+ * param base MCAN peripheral base address.
+ * param config The receive buffer configuration structure.
+ */
 void MCAN_SetRxBufferConfig(CAN_Type *base, const mcan_rx_buffer_config_t *config)
 {
     /* Set Rx Buffer start address. */
@@ -400,6 +501,14 @@ void MCAN_SetRxBufferConfig(CAN_Type *base, const mcan_rx_buffer_config_t *confi
     base->RXESC |= CAN_RXESC_RBDS(config->datafieldSize);
 }
 
+/*!
+ * brief Configures an MCAN transmit event fifo.
+ *
+ * This function sets start address, element size, watermark of the transmit event fifo.
+ *
+ * param base MCAN peripheral base address.
+ * param config The transmit event fifo configuration structure.
+ */
 void MCAN_SetTxEventFifoConfig(CAN_Type *base, const mcan_tx_fifo_config_t *config)
 {
     /* Set TX Event FIFO start address, element size, watermark. */
@@ -407,6 +516,15 @@ void MCAN_SetTxEventFifoConfig(CAN_Type *base, const mcan_tx_fifo_config_t *conf
                    CAN_TXEFC_EFWM(config->watermark);
 }
 
+/*!
+ * brief Configures an MCAN transmit buffer.
+ *
+ * This function sets start address, element size, fifo/queue mode and datafield
+ * size of the transmit buffer.
+ *
+ * param base MCAN peripheral base address.
+ * param config The transmit buffer configuration structure.
+ */
 void MCAN_SetTxBufferConfig(CAN_Type *base, const mcan_tx_buffer_config_t *config)
 {
     assert((config->dedicatedSize + config->fqSize) <= 32U);
@@ -418,6 +536,15 @@ void MCAN_SetTxBufferConfig(CAN_Type *base, const mcan_tx_buffer_config_t *confi
     base->TXESC |= CAN_TXESC_TBDS(config->datafieldSize);
 }
 
+/*!
+ * brief Set filter configuration.
+ *
+ * This function sets remote and non masking frames in global filter configuration,
+ * also the start address, list size in standard/extended ID filter configuration.
+ *
+ * param base MCAN peripheral base address.
+ * param config The MCAN filter configuration.
+ */
 void MCAN_SetSTDFilterElement(CAN_Type *base,
                               const mcan_frame_filter_config_t *config,
                               const mcan_std_filter_element_config_t *filter,
@@ -428,6 +555,15 @@ void MCAN_SetSTDFilterElement(CAN_Type *base,
     memcpy(elementAddress, filter, sizeof(mcan_std_filter_element_config_t));
 }
 
+/*!
+ * brief Set filter configuration.
+ *
+ * This function sets remote and non masking frames in global filter configuration,
+ * also the start address, list size in standard/extended ID filter configuration.
+ *
+ * param base MCAN peripheral base address.
+ * param config The MCAN filter configuration.
+ */
 void MCAN_SetEXTFilterElement(CAN_Type *base,
                               const mcan_frame_filter_config_t *config,
                               const mcan_ext_filter_element_config_t *filter,
@@ -502,16 +638,43 @@ static uint32_t MCAN_GetTxBufferElementAddress(CAN_Type *base, uint8_t idx)
     return (base->TXBC & CAN_TXBC_TBSA_MASK) + idx * eSize * 4U;
 }
 
+/*!
+ * brief Gets the Tx buffer request pending status.
+ *
+ * This function returns Tx Message Buffer transmission request pending status.
+ *
+ * param base MCAN peripheral base address.
+ * param idx The MCAN Tx Buffer index.
+ */
 uint32_t MCAN_IsTransmitRequestPending(CAN_Type *base, uint8_t idx)
 {
     return (base->TXBRP & (uint32_t)(1U << idx)) >> (uint32_t)idx;
 }
 
+/*!
+ * brief Gets the Tx buffer transmission occurred status.
+ *
+ * This function returns Tx Message Buffer transmission occurred status.
+ *
+ * param base MCAN peripheral base address.
+ * param idx The MCAN Tx Buffer index.
+ */
 uint32_t MCAN_IsTransmitOccurred(CAN_Type *base, uint8_t idx)
 {
     return (base->TXBTO & (uint32_t)(1U << idx)) >> (uint32_t)idx;
 }
 
+/*!
+ * brief Writes an MCAN Message to the Transmit Buffer.
+ *
+ * This function writes a CAN Message to the specified Transmit Message Buffer
+ * and changes the Message Buffer state to start CAN Message transmit. After
+ * that the function returns immediately.
+ *
+ * param base MCAN peripheral base address.
+ * param idx The MCAN Tx Buffer index.
+ * param txFrame Pointer to CAN message frame to be sent.
+ */
 status_t MCAN_WriteTxBuffer(CAN_Type *base, uint8_t idx, const mcan_tx_buffer_frame_t *txFrame)
 {
     if (!MCAN_IsTransmitRequestPending(base, idx))
@@ -531,6 +694,16 @@ status_t MCAN_WriteTxBuffer(CAN_Type *base, uint8_t idx, const mcan_tx_buffer_fr
     }
 }
 
+/*!
+ * brief Reads an MCAN Message from Rx Buffer.
+ *
+ * This function reads a CAN message from the Rx Buffer in the Message RAM.
+ *
+ * param base MCAN peripheral base address.
+ * param idx The MCAN Rx Buffer index.
+ * param rxFrame Pointer to CAN message frame structure for reception.
+ * retval kStatus_Success - Read Message from Rx Buffer successfully.
+ */
 status_t MCAN_ReadRxBuffer(CAN_Type *base, uint8_t idx, mcan_rx_buffer_frame_t *rxFrame)
 {
     mcan_rx_buffer_frame_t *elementAddress = NULL;
@@ -539,6 +712,16 @@ status_t MCAN_ReadRxBuffer(CAN_Type *base, uint8_t idx, mcan_rx_buffer_frame_t *
     return kStatus_Success;
 }
 
+/*!
+ * brief Reads an MCAN Message from Rx FIFO.
+ *
+ * This function reads a CAN message from the Rx FIFO in the Message RAM.
+ *
+ * param base MCAN peripheral base address.
+ * param fifoBlock Rx FIFO block 0 or 1.
+ * param rxFrame Pointer to CAN message frame structure for reception.
+ * retval kStatus_Success - Read Message from Rx FIFO successfully.
+ */
 status_t MCAN_ReadRxFifo(CAN_Type *base, uint8_t fifoBlock, mcan_rx_buffer_frame_t *rxFrame)
 {
     assert((fifoBlock == 0) || (fifoBlock == 1U));
@@ -565,6 +748,17 @@ status_t MCAN_ReadRxFifo(CAN_Type *base, uint8_t fifoBlock, mcan_rx_buffer_frame
     return kStatus_Success;
 }
 
+/*!
+ * brief Performs a polling send transaction on the CAN bus.
+ *
+ * Note that a transfer handle does not need to be created  before calling this API.
+ *
+ * param base MCAN peripheral base pointer.
+ * param idx The MCAN buffer index.
+ * param txFrame Pointer to CAN message frame to be sent.
+ * retval kStatus_Success - Write Tx Message Buffer Successfully.
+ * retval kStatus_Fail    - Tx Message Buffer is currently in use.
+ */
 status_t MCAN_TransferSendBlocking(CAN_Type *base, uint8_t idx, mcan_tx_buffer_frame_t *txFrame)
 {
     if (kStatus_Success == MCAN_WriteTxBuffer(base, idx, txFrame))
@@ -583,6 +777,17 @@ status_t MCAN_TransferSendBlocking(CAN_Type *base, uint8_t idx, mcan_tx_buffer_f
     }
 }
 
+/*!
+ * brief Performs a polling receive transaction on the CAN bus.
+ *
+ * Note that a transfer handle does not need to be created  before calling this API.
+ *
+ * param base MCAN peripheral base pointer.
+ * param idx The MCAN buffer index.
+ * param rxFrame Pointer to CAN message frame structure for reception.
+ * retval kStatus_Success - Read Rx Message Buffer Successfully.
+ * retval kStatus_Fail    - No new message.
+ */
 status_t MCAN_TransferReceiveBlocking(CAN_Type *base, uint8_t bufferIdx, mcan_rx_buffer_frame_t *rxFrame)
 {
     assert(bufferIdx <= 63U);
@@ -594,6 +799,17 @@ status_t MCAN_TransferReceiveBlocking(CAN_Type *base, uint8_t bufferIdx, mcan_rx
     return MCAN_ReadRxBuffer(base, bufferIdx, rxFrame);
 }
 
+/*!
+ * brief Performs a polling receive transaction from Rx FIFO on the CAN bus.
+ *
+ * Note that a transfer handle does not need to be created before calling this API.
+ *
+ * param base MCAN peripheral base pointer.
+ * param fifoBlock Rx FIFO block, 0 or 1.
+ * param rxFrame Pointer to CAN message frame structure for reception.
+ * retval kStatus_Success - Read Message from Rx FIFO successfully.
+ * retval kStatus_Fail    - No new message in Rx FIFO.
+ */
 status_t MCAN_TransferReceiveFifoBlocking(CAN_Type *base, uint8_t fifoBlock, mcan_rx_buffer_frame_t *rxFrame)
 {
     assert((fifoBlock == 0) || (fifoBlock == 1U));
@@ -614,6 +830,18 @@ status_t MCAN_TransferReceiveFifoBlocking(CAN_Type *base, uint8_t fifoBlock, mca
     return MCAN_ReadRxFifo(base, fifoBlock, rxFrame);
 }
 
+/*!
+ * brief Initializes the MCAN handle.
+ *
+ * This function initializes the MCAN handle, which can be used for other MCAN
+ * transactional APIs. Usually, for a specified MCAN instance,
+ * call this API once to get the initialized handle.
+ *
+ * param base MCAN peripheral base address.
+ * param handle MCAN handle pointer.
+ * param callback The callback function.
+ * param userData The parameter of the callback function.
+ */
 void MCAN_TransferCreateHandle(CAN_Type *base, mcan_handle_t *handle, mcan_transfer_callback_t callback, void *userData)
 {
     assert(handle);
@@ -655,6 +883,19 @@ void MCAN_TransferCreateHandle(CAN_Type *base, mcan_handle_t *handle, mcan_trans
     EnableIRQ((IRQn_Type)(s_mcanIRQ[instance][1]));
 }
 
+/*!
+ * brief Sends a message using IRQ.
+ *
+ * This function sends a message using IRQ. This is a non-blocking function, which returns
+ * right away. When messages have been sent out, the send callback function is called.
+ *
+ * param base MCAN peripheral base address.
+ * param handle MCAN handle pointer.
+ * param xfer MCAN Buffer transfer structure. See the #mcan_buffer_transfer_t.
+ * retval kStatus_Success        Start Tx Buffer sending process successfully.
+ * retval kStatus_Fail           Write Tx Buffer failed.
+ * retval kStatus_MCAN_TxBusy Tx Buffer is in use.
+ */
 status_t MCAN_TransferSendNonBlocking(CAN_Type *base, mcan_handle_t *handle, mcan_buffer_transfer_t *xfer)
 {
     /* Assertion. */
@@ -701,6 +942,20 @@ status_t MCAN_TransferSendNonBlocking(CAN_Type *base, mcan_handle_t *handle, mca
     }
 }
 
+/*!
+ * brief Receives a message from Rx FIFO using IRQ.
+ *
+ * This function receives a message using IRQ. This is a non-blocking function, which returns
+ * right away. When all messages have been received, the receive callback function is called.
+ *
+ * param base MCAN peripheral base address.
+ * param handle MCAN handle pointer.
+ * param fifoBlock Rx FIFO block, 0 or 1.
+ * param xfer MCAN Rx FIFO transfer structure. See the ref mcan_fifo_transfer_t.
+ * retval kStatus_Success            - Start Rx FIFO receiving process successfully.
+ * retval kStatus_MCAN_RxFifo0Busy - Rx FIFO 0 is currently in use.
+ * retval kStatus_MCAN_RxFifo1Busy - Rx FIFO 1 is currently in use.
+ */
 status_t MCAN_TransferReceiveFifoNonBlocking(CAN_Type *base,
                                              uint8_t fifoBlock,
                                              mcan_handle_t *handle,
@@ -736,6 +991,15 @@ status_t MCAN_TransferReceiveFifoNonBlocking(CAN_Type *base,
     }
 }
 
+/*!
+ * brief Aborts the interrupt driven message send process.
+ *
+ * This function aborts the interrupt driven message send process.
+ *
+ * param base MCAN peripheral base address.
+ * param handle MCAN handle pointer.
+ * param bufferIdx The MCAN Buffer index.
+ */
 void MCAN_TransferAbortSend(CAN_Type *base, mcan_handle_t *handle, uint8_t bufferIdx)
 {
     /* Assertion. */
@@ -755,6 +1019,15 @@ void MCAN_TransferAbortSend(CAN_Type *base, mcan_handle_t *handle, uint8_t buffe
     handle->bufferState[bufferIdx] = kMCAN_StateIdle;
 }
 
+/*!
+ * brief Aborts the interrupt driven message receive from Rx FIFO process.
+ *
+ * This function aborts the interrupt driven message receive from Rx FIFO process.
+ *
+ * param base MCAN peripheral base address.
+ * param fifoBlock MCAN Fifo block, 0 or 1.
+ * param handle MCAN handle pointer.
+ */
 void MCAN_TransferAbortReceiveFifo(CAN_Type *base, uint8_t fifoBlock, mcan_handle_t *handle)
 {
     /* Assertion. */
@@ -777,6 +1050,14 @@ void MCAN_TransferAbortReceiveFifo(CAN_Type *base, uint8_t fifoBlock, mcan_handl
     handle->rxFifoState = kMCAN_StateIdle;
 }
 
+/*!
+ * brief MCAN IRQ handle function.
+ *
+ * This function handles the MCAN Error, the Buffer, and the Rx FIFO IRQ request.
+ *
+ * param base MCAN peripheral base address.
+ * param handle MCAN handle pointer.
+ */
 void MCAN_TransferHandleIRQ(CAN_Type *base, mcan_handle_t *handle)
 {
     /* Assertion. */
@@ -845,8 +1126,8 @@ void CAN0_IRQ0_DriverIRQHandler(void)
     assert(s_mcanHandle[0]);
 
     s_mcanIsr(CAN0, s_mcanHandle[0]);
-    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
-      exception return operation might vector to incorrect interrupt */
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
     __DSB();
 #endif
@@ -857,8 +1138,8 @@ void CAN0_IRQ1_DriverIRQHandler(void)
     assert(s_mcanHandle[0]);
 
     s_mcanIsr(CAN0, s_mcanHandle[0]);
-    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
-      exception return operation might vector to incorrect interrupt */
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
     __DSB();
 #endif
@@ -871,8 +1152,8 @@ void CAN1_IRQ0_DriverIRQHandler(void)
     assert(s_mcanHandle[1]);
 
     s_mcanIsr(CAN1, s_mcanHandle[1]);
-    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
-      exception return operation might vector to incorrect interrupt */
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
     __DSB();
 #endif
@@ -883,8 +1164,8 @@ void CAN1_IRQ1_DriverIRQHandler(void)
     assert(s_mcanHandle[1]);
 
     s_mcanIsr(CAN1, s_mcanHandle[1]);
-    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
-      exception return operation might vector to incorrect interrupt */
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
     __DSB();
 #endif

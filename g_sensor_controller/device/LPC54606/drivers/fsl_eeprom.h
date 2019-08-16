@@ -1,41 +1,15 @@
 /*
- * The Clear BSD License
- * Copyright (c) 2016, Freescale Semiconductor, Inc.
+ * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- *  that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_EEPROM_H_
 #define _FSL_EEPROM_H_
 
 #include "fsl_common.h"
-
+#include "fsl_power.h"
 /*!
  * @addtogroup eeprom
  * @{
@@ -47,8 +21,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief EEPROM driver version 2.0.0. */
-#define FSL_EEPROM_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief EEPROM driver version 2.1.0. */
+#define FSL_EEPROM_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
 /*@}*/
 
 /*! @brief EEPROM automatic program option */
@@ -80,8 +54,8 @@ typedef struct _eeprom_config
 } eeprom_config_t;
 
 /*******************************************************************************
- * API
- ******************************************************************************/
+* API
+******************************************************************************/
 
 #if defined(__cplusplus)
 extern "C" {
@@ -190,6 +164,20 @@ static inline uint32_t EEPROM_GetInterruptStatus(EEPROM_Type *base)
 }
 
 /*!
+ * @brief Clear interrupt flags manually.
+ *
+ * This API clears interrupt flags manually. Call this API will clear the corresponding bit in INSTAT register.
+ *
+ * @param base     EEPROM peripheral base address.
+ * @param mask     EEPROM interrupt flag need to be cleared. It is a logic OR of members of
+ *                 enumeration:: eeprom_interrupt_enable_t
+ */
+static inline void EEPROM_ClearInterruptFlag(EEPROM_Type *base, uint32_t mask)
+{
+    base->INTSTATCLR = mask;
+}
+
+/*!
  * @brief Get the status of enabled interrupt flags for ERPROM.
  *
  * @param base     EEPROM peripheral base address.
@@ -216,20 +204,6 @@ static inline void EEPROM_SetInterruptFlag(EEPROM_Type *base, uint32_t mask)
 }
 
 /*!
- * @brief Clear interrupt flags manually.
- *
- * This API clears interrupt flags manually. Call this API will clear the corresponding bit in INSTAT register.
- *
- * @param base     EEPROM peripheral base address.
- * @param mask     EEPROM interrupt flag need to be cleared. It is a logic OR of members of
- *                 enumeration:: eeprom_interrupt_enable_t
- */
-static inline void EEPROM_ClearInterruptFlag(EEPROM_Type *base, uint32_t mask)
-{
-    base->INTSTATCLR = mask;
-}
-
-/*!
  * @brief Write a word data in address of EEPROM.
  *
  * Users can write a page or at least a word data into EEPROM address.
@@ -241,6 +215,121 @@ static inline void EEPROM_ClearInterruptFlag(EEPROM_Type *base, uint32_t mask)
 status_t EEPROM_WriteWord(EEPROM_Type *base, uint32_t offset, uint32_t data);
 
 /*!
+ * @brief Write data from a user allocated buffer in address of EEPROM.
+ *
+ * Users can write any bytes data into EEPROM address by wBuf.
+ *
+ * @param base     EEPROM peripheral base address.
+ * @param offset   Offset from the begining address of EEPROM.
+ * @param wBuf     Data need be write.
+ * @param size     Number of bytes to write.
+ */
+void EEPROM_Write(EEPROM_Type *base, int offset, void *wBuf, int size);
+
+/*!
+ * @name Data Check Operations
+ * @{
+ */
+#if !(defined(FSL_FEATURE_EEPROM_PAGE_COUNT) && FSL_FEATURE_EEPROM_PAGE_COUNT)
+/*!
+ * @brief read eeprom device status manually.
+ *
+ * This API read eeprom device status manually. Call this API will read the corresponding bit in STATUS register.
+ *
+ * @param base     EEPROM peripheral base address.
+ */
+static inline uint32_t EEPROM_GetDeviceStatus(EEPROM_Type *base)
+{
+    return base->STATUS;
+}
+
+/*!
+ * @brief read ecc error count manually.
+ *
+ * This API read ecc error count manually. Call this API will read the corresponding bit in ECCERRCNT register.
+ *
+ * @param base     EEPROM peripheral base address.
+ */
+static inline uint32_t EEPROM_GetEccErrorCount(EEPROM_Type *base)
+{
+    return base->ECCERRCNT;
+}
+
+/*!
+ * @brief set ecc error count manually.
+ *
+ * This API set ecc error count manually. Call this API will set the corresponding bit in ECCERRCNT register.
+ *
+ * @param base     EEPROM peripheral base address.
+ * @param mask     The mask of ecc error status.
+ */
+static inline void EEPROM_SetEccErrorCount(EEPROM_Type *base, uint32_t mask)
+{
+    base->ECCERRCNT = mask;
+}
+
+/*!
+ * @brief set checksum start address manually.
+ *
+ * This API set checksum start address manually. Call this API will set the corresponding bit in MSSTART register.
+ *
+ * @param base     EEPROM peripheral base address.
+ * @param mask     The mask of checksum start address.
+ */
+static inline void EEPROM_SetCheckStartAddress(EEPROM_Type *base, uint32_t mask)
+{
+    base->MSSTART = mask;
+}
+/*!
+ * @brief set checksum stop address manually.
+ *
+ * This API set checksum stop address manually. Call this API will set the corresponding bit in MSSTOP register.
+ *
+ * @param base     EEPROM peripheral base address.
+ * @param mask     The mask of checksum stop address.
+ */
+static inline void EEPROM_SetCheckStopAddress(EEPROM_Type *base, uint32_t mask)
+{
+    base->MSSTOP = mask;
+}
+
+/*!
+ * @brief read data signature manually.
+ *
+ * This API read data signature manually. Call this API will clear the corresponding bit in MSDATASIG register.
+ *
+ * @param base     EEPROM peripheral base address.sss
+ *
+ */
+static inline uint32_t EEPROM_GetDataSignature(EEPROM_Type *base)
+{
+    return base->MSDATASIG;
+}
+
+/*!
+ * @brief read parity signature manually.
+ *
+ * This API read parity signature manually. Call this API will clear the corresponding bit in MSPARSIG register.
+ *
+ * @param base     EEPROM peripheral base address.
+ */
+static inline uint32_t EEPROM_GetParitySignature(EEPROM_Type *base)
+{
+    return base->MSPARSIG;
+}
+
+/*!
+ * @brief Write a row data into EEPROM.
+ *
+ * Users can write a row or at least a word data into EEPROM address.
+ *
+ * @param base     EEPROM peripheral base address.
+ * @param pageNum  Row number to be written.
+ * @param data     Data need be write. This array data size shall equals to the row size.
+ */
+status_t EEPROM_WriteRow(EEPROM_Type *base, uint32_t rowNum, uint32_t *data);
+
+/*!
  * @brief Write a page data into EEPROM.
  *
  * Users can write a page or at least a word data into EEPROM address.
@@ -249,7 +338,9 @@ status_t EEPROM_WriteWord(EEPROM_Type *base, uint32_t offset, uint32_t data);
  * @param pageNum  Page number to be written.
  * @param data     Data need be write. This array data size shall equals to the page size.
  */
+#else
 status_t EEPROM_WritePage(EEPROM_Type *base, uint32_t pageNum, uint32_t *data);
+#endif /* FSL_FEATURE_EEPROM_PAGE_COUNT */
 
 /* @} */
 
@@ -258,5 +349,4 @@ status_t EEPROM_WritePage(EEPROM_Type *base, uint32_t pageNum, uint32_t *data);
 #endif
 
 /*! @}*/
-
-#endif /* _FSL_EEPROM_H_ */
+#endif /*_FSL_EEPROM_H_*/

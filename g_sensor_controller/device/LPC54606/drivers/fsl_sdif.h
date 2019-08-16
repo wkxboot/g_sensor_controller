@@ -1,35 +1,9 @@
 /*
- * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- *  that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_SDIF_H_
 #define _FSL_SDIF_H_
@@ -47,8 +21,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief Driver version 2.0.7. */
-#define FSL_SDIF_DRIVER_VERSION (MAKE_VERSION(2U, 0U, 7U))
+/*! @brief Driver version 2.0.9. */
+#define FSL_SDIF_DRIVER_VERSION (MAKE_VERSION(2U, 0U, 9U))
 /*@}*/
 
 /*! @brief  SDIOCLKCTRL setting
@@ -94,6 +68,13 @@
 
 /*! @brief SDIF internal DMA descriptor address and the data buffer address align */
 #define SDIF_INTERNAL_DMA_ADDR_ALIGN (4U)
+/*! @brief SDIF DMA descriptor flag */
+#define SDIF_DMA_DESCRIPTOR_DISABLE_COMPLETE_INT_FLAG (1U << 1U)
+#define SDIF_DMA_DESCRIPTOR_DATA_BUFFER_END_FLAG (1U << 2U)
+#define SDIF_DMA_DESCRIPTOR_DATA_BUFFER_START_FLAG (1U << 3U)
+#define SDIF_DMA_DESCRIPTOR_SECOND_ADDR_CHAIN_FLAG (1U << 4U)
+#define SDIF_DMA_DESCRIPTOR_DESCRIPTOR_END_FLAG (1U << 5U)
+#define SDIF_DMA_DESCRIPTOR_OWN_BY_DMA_FLAG (1U << 31U)
 
 /*! @brief SDIF status */
 enum _sdif_status
@@ -144,10 +125,10 @@ enum _sdif_reset_type
 /*! @brief define the card bus width type */
 typedef enum _sdif_bus_width
 {
-    kSDIF_Bus1BitWidth = 0U,                          /*!< 1bit bus width, 1bit mode and 4bit mode
-                                                      share one register bit */
-    kSDIF_Bus4BitWidth = SDIF_CTYPE_CARD_WIDTH0_MASK, /*!< 4bit mode mask */
-    kSDIF_Bus8BitWidth = SDIF_CTYPE_CARD_WIDTH1_MASK, /*!< support 8 bit mode */
+    kSDIF_Bus1BitWidth = 0U, /*!< 1bit bus width, 1bit mode and 4bit mode
+                                                   share one register bit */
+    kSDIF_Bus4BitWidth = 1U, /*!< 4bit mode mask */
+    kSDIF_Bus8BitWidth = 2U, /*!< support 8 bit mode */
 } sdif_bus_width_t;
 
 /*! @brief define the command flags */
@@ -260,19 +241,22 @@ enum _sdif_dma_status
 
 };
 
-/*! @brief define the internal DMA descriptor flag */
+/*! @brief define the internal DMA descriptor flag
+ *  @deprecated Do not use this enum anymore, please use SDIF_DMA_DESCRIPTOR_XXX_FLAG instead.
+ */
 enum _sdif_dma_descriptor_flag
 {
     kSDIF_DisableCompleteInterrupt = 0x2U,     /*!< disable the complete interrupt flag for the ends
-                                                in the buffer pointed to by this descriptor*/
+                                           in the buffer pointed to by this descriptor*/
     kSDIF_DMADescriptorDataBufferEnd = 0x4U,   /*!< indicate this descriptor contain the last data buffer of data */
     kSDIF_DMADescriptorDataBufferStart = 0x8U, /*!< indicate this descriptor contain the first data buffer
-                                                 of data,if first buffer size is 0,next descriptor contain
-                                                 the begin of the data*/
-    kSDIF_DMASecondAddrChained = 0x10U,        /*!< indicate that the second addr in the descriptor is the
+                                            of data,if first buffer size is 0,next descriptor contain
+                                            the begin of the data*/
+
+    kSDIF_DMASecondAddrChained = 0x10U,            /*!< indicate that the second addr in the descriptor is the
                                                next descriptor addr not the data buffer */
-    kSDIF_DMADescriptorEnd = 0x20U,            /*!< indicate that the descriptor list reached its final descriptor*/
-    kSDIF_DMADescriptorOwnByDMA = 0x80000000U, /*!< indicate the descriptor is own by SD/MMC DMA */
+    kSDIF_DMADescriptorEnd = 0x20U,                /*!< indicate that the descriptor list reached its final descriptor*/
+    kSDIF_DMADescriptorOwnByDMA = (int)0x80000000, /*!< indicate the descriptor is own by SD/MMC DMA */
 };
 
 /*! @brief define the internal DMA mode */
@@ -455,8 +439,133 @@ void SDIF_Deinit(SDIF_Type *base);
  */
 bool SDIF_SendCardActive(SDIF_Type *base, uint32_t timeout);
 
+#if defined(FSL_FEATURE_SDIF_ONE_INSTANCE_SUPPORT_TWO_CARD) && FSL_FEATURE_SDIF_ONE_INSTANCE_SUPPORT_TWO_CARD
 /*!
- * @brief SDIF module detect card insert status function.
+ * @brief SDIF module enable/disable card0 clock.
+ * @param base SDIF peripheral base address.
+ * @param enable/disable flag
+ */
+static inline void SDIF_EnableCardClock(SDIF_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->CLKENA |= SDIF_CLKENA_CCLK0_ENABLE_MASK;
+    }
+    else
+    {
+        base->CLKENA &= SDIF_CLKENA_CCLK0_ENABLE_MASK;
+    }
+}
+
+/*!
+ * @brief SDIF module enable/disable card1 clock.
+ * @param base SDIF peripheral base address.
+ * @param enable/disable flag
+ */
+static inline void SDIF_EnableCard1Clock(SDIF_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->CLKENA |= SDIF_CLKENA_CCLK1_ENABLE_MASK;
+    }
+    else
+    {
+        base->CLKENA &= ~SDIF_CLKENA_CCLK1_ENABLE_MASK;
+    }
+}
+
+/*!
+ * @brief SDIF module enable/disable module disable the card clock
+ * to enter low power mode when card is idle,for SDIF cards, if
+ * interrupts must be detected, clock should not be stopped
+ * @param base SDIF peripheral base address.
+ * @param enable/disable flag
+ */
+static inline void SDIF_EnableLowPowerMode(SDIF_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->CLKENA |= SDIF_CLKENA_CCLK0_LOW_POWER_MASK;
+    }
+    else
+    {
+        base->CLKENA &= ~SDIF_CLKENA_CCLK0_LOW_POWER_MASK;
+    }
+}
+
+/*!
+ * @brief SDIF module enable/disable module disable the card clock
+ * to enter low power mode when card is idle,for SDIF cards, if
+ * interrupts must be detected, clock should not be stopped
+ * @param base SDIF peripheral base address.
+ * @param enable/disable flag
+ */
+static inline void SDIF_EnableCard1LowPowerMode(SDIF_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->CLKENA |= SDIF_CLKENA_CCLK1_LOW_POWER_MASK;
+    }
+    else
+    {
+        base->CLKENA &= ~SDIF_CLKENA_CCLK1_LOW_POWER_MASK;
+    }
+}
+
+/*!
+ * @brief enable/disable the card0 power.
+ * once turn power on, software should wait for regulator/switch
+ * ramp-up time before trying to initialize card.
+ * @param base SDIF peripheral base address.
+ * @param enable/disable flag.
+ */
+static inline void SDIF_EnableCardPower(SDIF_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->PWREN |= SDIF_PWREN_POWER_ENABLE0_MASK;
+    }
+    else
+    {
+        base->PWREN &= ~SDIF_PWREN_POWER_ENABLE0_MASK;
+    }
+}
+
+/*!
+ * @brief enable/disable the card1 power.
+ * once turn power on, software should wait for regulator/switch
+ * ramp-up time before trying to initialize card.
+ * @param base SDIF peripheral base address.
+ * @param enable/disable flag.
+ */
+static inline void SDIF_EnableCard1Power(SDIF_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->PWREN |= SDIF_PWREN_POWER_ENABLE1_MASK;
+    }
+    else
+    {
+        base->PWREN &= ~SDIF_PWREN_POWER_ENABLE1_MASK;
+    }
+}
+
+/*!
+ * @brief set card0 data bus width
+ * @param base SDIF peripheral base address.
+ * @param data bus width type
+ */
+void SDIF_SetCardBusWidth(SDIF_Type *base, sdif_bus_width_t type);
+
+/*!
+ * @brief set card1 data bus width
+ * @param base SDIF peripheral base address.
+ * @param data bus width type
+ */
+void SDIF_SetCard1BusWidth(SDIF_Type *base, sdif_bus_width_t type);
+
+/*!
+ * @brief SDIF module detect card0 insert status function.
  * @param base SDIF peripheral base address.
  * @param data3 indicate use data3 as card insert detect pin
  * @retval 1 card is inserted
@@ -470,10 +579,29 @@ static inline uint32_t SDIF_DetectCardInsert(SDIF_Type *base, bool data3)
     }
     else
     {
-        return (base->CDETECT & SDIF_CDETECT_CARD_DETECT_MASK) == 0U ? 1U : 0U;
+        return (base->CDETECT & SDIF_CDETECT_CARD0_DETECT_MASK) == 0U ? 1U : 0U;
     }
 }
 
+/*!
+ * @brief SDIF module detect card1 insert status function.
+ * @param base SDIF peripheral base address.
+ * @param data3 indicate use data3 as card insert detect pin
+ * @retval 1 card is inserted
+ *         0 card is removed
+ */
+static inline uint32_t SDIF_DetectCard1Insert(SDIF_Type *base, bool data3)
+{
+    if (data3)
+    {
+        return (base->STATUS & SDIF_STATUS_DATA_3_STATUS_MASK) == SDIF_STATUS_DATA_3_STATUS_MASK ? 1U : 0U;
+    }
+    else
+    {
+        return (base->CDETECT & SDIF_CDETECT_CARD1_DETECT_MASK) == 0U ? 1U : 0U;
+    }
+}
+#else
 /*!
  * @brief SDIF module enable/disable card clock.
  * @param base SDIF peripheral base address.
@@ -511,25 +639,6 @@ static inline void SDIF_EnableLowPowerMode(SDIF_Type *base, bool enable)
 }
 
 /*!
- * @brief Sets the card bus clock frequency.
- *
- * @param base SDIF peripheral base address.
- * @param srcClock_Hz SDIF source clock frequency united in Hz.
- * @param target_HZ card bus clock frequency united in Hz.
- * @return The nearest frequency of busClock_Hz configured to SD bus.
- */
-uint32_t SDIF_SetCardClock(SDIF_Type *base, uint32_t srcClock_Hz, uint32_t target_HZ);
-
-/*!
- * @brief reset the different block of the interface.
- * @param base SDIF peripheral base address.
- * @param mask indicate which block to reset.
- * @param timeout value,set to wait the bit self clear
- * @return reset result.
- */
-bool SDIF_Reset(SDIF_Type *base, uint32_t mask, uint32_t timeout);
-
-/*!
  * @brief enable/disable the card power.
  * once turn power on, software should wait for regulator/switch
  * ramp-up time before trying to initialize card.
@@ -549,22 +658,58 @@ static inline void SDIF_EnableCardPower(SDIF_Type *base, bool enable)
 }
 
 /*!
+ * @brief set card data bus width
+ * @param base SDIF peripheral base address.
+ * @param data bus width type
+ */
+void SDIF_SetCardBusWidth(SDIF_Type *base, sdif_bus_width_t type);
+
+/*!
+ * @brief SDIF module detect card insert status function.
+ * @param base SDIF peripheral base address.
+ * @param data3 indicate use data3 as card insert detect pin
+ * @retval 1 card is inserted
+ *         0 card is removed
+ */
+static inline uint32_t SDIF_DetectCardInsert(SDIF_Type *base, bool data3)
+{
+    if (data3)
+    {
+        return (base->STATUS & SDIF_STATUS_DATA_3_STATUS_MASK) == SDIF_STATUS_DATA_3_STATUS_MASK ? 1U : 0U;
+    }
+    else
+    {
+        return (base->CDETECT & SDIF_CDETECT_CARD_DETECT_MASK) == 0U ? 1U : 0U;
+    }
+}
+#endif
+
+/*!
+ * @brief Sets the card bus clock frequency.
+ *
+ * @param base SDIF peripheral base address.
+ * @param srcClock_Hz SDIF source clock frequency united in Hz.
+ * @param target_HZ card bus clock frequency united in Hz.
+ * @return The nearest frequency of busClock_Hz configured to SD bus.
+ */
+uint32_t SDIF_SetCardClock(SDIF_Type *base, uint32_t srcClock_Hz, uint32_t target_HZ);
+
+/*!
+ * @brief reset the different block of the interface.
+ * @param base SDIF peripheral base address.
+ * @param mask indicate which block to reset.
+ * @param timeout value,set to wait the bit self clear
+ * @return reset result.
+ */
+bool SDIF_Reset(SDIF_Type *base, uint32_t mask, uint32_t timeout);
+
+/*!
  * @brief get the card write protect status
  * @param base SDIF peripheral base address.
  */
 static inline uint32_t SDIF_GetCardWriteProtect(SDIF_Type *base)
 {
     return base->WRTPRT & SDIF_WRTPRT_WRITE_PROTECT_MASK;
-}
-
-/*!
- * @brief set card data bus width
- * @param base SDIF peripheral base address.
- * @param data bus width type
- */
-static inline void SDIF_SetCardBusWidth(SDIF_Type *base, sdif_bus_width_t type)
-{
-    base->CTYPE = type;
 }
 
 /*!

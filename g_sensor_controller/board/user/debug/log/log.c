@@ -1,4 +1,5 @@
-/*****************************************************************************
+/**
+******************************************************************************
 *  log库函数                                                          
 *  Copyright (C) 2019 wkxboot 1131204425@qq.com.                             
 *                                                                            
@@ -18,21 +19,22 @@
 *                                                                            
 *****************************************************************************/
 #include "log.h"
-#if  LOG_USE_RTT > 0
+
+#if  LOG_USE_SEGGER_RTT > 0
 #include "SEGGER_RTT.h"
 #endif
 
-#if  LOG_USE_SERIAL > 0
-#include "log_serial_uart.h"
+#if  LOG_USE_UART_CONSOLE > 0
+#include "uart_console.h"
 #endif
 
 
-/*日志全局输出等级*/
+/** 日志全局输出等级*/
 volatile uint8_t log_level_globle = LOG_LEVEL_GLOBLE_DEFAULT;
  
                                                                         
 	
-/*
+/**
 * @brief 终端日志初始化
 * @param 无
 * @return 无
@@ -40,16 +42,16 @@ volatile uint8_t log_level_globle = LOG_LEVEL_GLOBLE_DEFAULT;
 */
 void log_init(void)
 {
-#if LOG_USE_RTT > 0
+#if LOG_USE_SEGGER_RTT > 0
     SEGGER_RTT_Init();
 #endif
 
-#if  LOG_USE_SERIAL > 0
-    log_serial_uart_init();
+#if  LOG_USE_UART_CONSOLE > 0
+    uart_console_init();
 #endif
 }
 
-/*
+/**
 * @brief 设置日志全局输出等级
 * @param lelvel 日志等级
 * @return = 0 成功
@@ -66,7 +68,7 @@ int log_set_level(uint8_t level)
     return 0;  
 }
 
-/*
+/**
 * @brief 终端读取输入
 * @param dst 读取数据存储的目的地址
 * @param size 期望读取的数量
@@ -77,18 +79,18 @@ int log_set_level(uint8_t level)
 uint32_t log_read(char *dst,uint32_t size)
 {
     uint32_t read_cnt;
-#if    LOG_USE_RTT > 0
+#if    LOG_USE_SEGGER_RTT > 0
     read_cnt = SEGGER_RTT_Read(0,dst,size);
-#elif  LOG_USE_SERIAL > 0
-    read_cnt = log_serial_uart_read(dst,size);
+#elif  LOG_USE_UART_CONSOLE > 0
+    read_cnt = uart_console_read(dst,size);
 #endif
     return read_cnt;
 }
 
 
-/*
+/**
 * @brief 终端日志输出
- @param level 输出等级
+* @param level 输出等级
 * @param format 格式化字符串
 * @param ... 可变参数
 * @return 实际写入的数量
@@ -107,17 +109,17 @@ int log_printf(uint8_t level,const char *format,...)
     if (level <= log_level_globle ) {
         vsnprintf(log_print_buffer,LOG_PRINTF_BUFFER_SIZE,format,ap);
         size = strlen(log_print_buffer);
-#if    LOG_USE_RTT > 0
+#if    LOG_USE_SEGGER_RTT > 0
         rc = SEGGER_RTT_Write(0,log_print_buffer,size);
-#elif  LOG_USE_SERIAL > 0
-        rc = log_serial_uart_write(log_print_buffer,size);
+#elif  LOG_USE_UART_CONSOLE > 0
+        rc = uart_console_write(log_print_buffer,size);
 #endif
     }
     va_end(ap);
     return rc;
 }
 
-/*
+/**
 * @brief 日志时间
 * @param 无
 * @return 
@@ -129,7 +131,7 @@ __weak uint32_t log_time(void)
 }
 
 
-/*
+/**
 * @brief 日志断言
 * @param 无
 * @return 

@@ -119,7 +119,10 @@ void BOARD_BootClockFRO12M(void)
     POWER_SetVoltageForFreq(
         12000000U); /*!< Set voltage for the one of the fastest clock outputs: System clock output */
     CLOCK_SetFLASHAccessCyclesForFreq(12000000U); /*!< Set FLASH wait states for core */
-
+    /*!< Set up WDT OSC */
+    POWER_EnablePD(kPDRUNCFG_PD_WDT_OSC);                    /*!< Ensure WDT OSC is off for setup changes */
+    SYSCON->WDTOSCCTRL = (SYSCON_WDTOSCCTRL_DIVSEL(29) | SYSCON_WDTOSCCTRL_FREQSEL(1));              /*!< Setup WDT oscillator */
+    POWER_DisablePD(kPDRUNCFG_PD_WDT_OSC);                   /*!< Ensure WDT OSC is on */
     /*!< Set up dividers */
     CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U, false); /*!< Reset divider counter and set divider to value 1 */
 
@@ -165,7 +168,10 @@ void BOARD_BootClockFROHF48M(void)
     CLOCK_SetFLASHAccessCyclesForFreq(48000000U); /*!< Set FLASH wait states for core */
 
     CLOCK_SetupFROClocking(48000000U); /*!< Set up high frequency FRO output to selected frequency */
-
+    /*!< Set up WDT OSC */
+    POWER_EnablePD(kPDRUNCFG_PD_WDT_OSC);                    /*!< Ensure WDT OSC is off for setup changes */
+    SYSCON->WDTOSCCTRL = (SYSCON_WDTOSCCTRL_DIVSEL(29) | SYSCON_WDTOSCCTRL_FREQSEL(1));              /*!< Setup WDT oscillator */
+    POWER_DisablePD(kPDRUNCFG_PD_WDT_OSC);                   /*!< Ensure WDT OSC is on */
     /*!< Set up dividers */
     CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U, false); /*!< Reset divider counter and set divider to value 1 */
 
@@ -214,7 +220,10 @@ void BOARD_BootClockFROHF96M(void)
     CLOCK_SetFLASHAccessCyclesForFreq(96000000U); /*!< Set FLASH wait states for core */
 
     CLOCK_SetupFROClocking(96000000U); /*!< Set up high frequency FRO output to selected frequency */
-
+    /*!< Set up WDT OSC */
+    POWER_EnablePD(kPDRUNCFG_PD_WDT_OSC);                    /*!< Ensure WDT OSC is off for setup changes */
+    SYSCON->WDTOSCCTRL = (SYSCON_WDTOSCCTRL_DIVSEL(29) | SYSCON_WDTOSCCTRL_FREQSEL(1));              /*!< Setup WDT oscillator */
+    POWER_DisablePD(kPDRUNCFG_PD_WDT_OSC);                   /*!< Ensure WDT OSC is on */
     /*!< Set up dividers */
     CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U, false); /*!< Reset divider counter and set divider to value 1 */
 
@@ -279,6 +288,11 @@ void BOARD_BootClockPLL180M(void)
         .flags = PLL_SETUPFLAG_WAITLOCK | PLL_SETUPFLAG_POWERUP};
     CLOCK_AttachClk(kFRO12M_to_SYS_PLL); /*!< Set sys pll clock source*/
     CLOCK_SetPLLFreq(&pllSetup);         /*!< Configure PLL to the desired value */
+
+    /*!< Set up WDT OSC */
+    POWER_EnablePD(kPDRUNCFG_PD_WDT_OSC);                    /*!< Ensure WDT OSC is off for setup changes */
+    SYSCON->WDTOSCCTRL = (SYSCON_WDTOSCCTRL_DIVSEL(29) | SYSCON_WDTOSCCTRL_FREQSEL(1));              /*!< Setup WDT oscillator */
+    POWER_DisablePD(kPDRUNCFG_PD_WDT_OSC);                   /*!< Ensure WDT OSC is on */
 
     /*!< Set up dividers */
     CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U, false); /*!< Reset divider counter and set divider to value 1 */

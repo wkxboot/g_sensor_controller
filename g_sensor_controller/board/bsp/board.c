@@ -36,29 +36,154 @@
 #include "fsl_common.h"
 #include "clock_config.h"
 #include "board.h"
-#include "pin_mux.h"
 
 
-/*系统运行灯*/
-static void bsp_sys_led_pin_init()
+
+/*压缩机开关控制引脚初始化*/
+static void bsp_compressor_ctrl_pin_init(void)
+{
+    gpio_pin_config_t pin;
+    pin.pinDirection = kGPIO_DigitalOutput;
+    pin.outputLogic = 0;
+    GPIO_PinInit(BOARD_INITPINS_COMPRESSOR_CTRL_GPIO,BOARD_INITPINS_COMPRESSOR_CTRL_PORT,BOARD_INITPINS_COMPRESSOR_CTRL_PIN,&pin);
+}
+
+/*开压缩机*/
+void bsp_compressor_ctrl_pwr_on(void)
+{
+    GPIO_PinWrite(BOARD_INITPINS_COMPRESSOR_CTRL_GPIO,BOARD_INITPINS_COMPRESSOR_CTRL_PORT,BOARD_INITPINS_COMPRESSOR_CTRL_PIN,1);
+}
+
+/*关压缩机*/
+void bsp_compressor_ctrl_pwr_off()
+{
+    GPIO_PinWrite(BOARD_INITPINS_COMPRESSOR_CTRL_GPIO,BOARD_INITPINS_COMPRESSOR_CTRL_PORT,BOARD_INITPINS_COMPRESSOR_CTRL_PIN,0);
+}
+
+
+/*锁开关控制引脚初始化*/
+static void bsp_lock_ctrl_pin_init()
 {
     gpio_pin_config_t pin;
     pin.pinDirection = kGPIO_DigitalOutput;
     pin.outputLogic = 1;
-    GPIO_PortInit(SYS_LED_GPIO, SYS_LED_PORT);
-    GPIO_PinInit(SYS_LED_GPIO,SYS_LED_PORT,SYS_LED_PIN,&pin);
+    GPIO_PinInit(BOARD_INITPINS_LOCK_CTRL_GPIO,BOARD_INITPINS_LOCK_CTRL_PORT,BOARD_INITPINS_LOCK_CTRL_PIN,&pin);
 }
 
+/*开锁*/
+void bsp_lock_ctrl_open(void)
+{
+  GPIO_PinWrite(BOARD_INITPINS_LOCK_CTRL_GPIO,BOARD_INITPINS_LOCK_CTRL_PORT,BOARD_INITPINS_LOCK_CTRL_PIN,0);
+}
+
+/*关锁*/
+void bsp_lock_ctrl_close()
+{
+    GPIO_PinWrite(BOARD_INITPINS_LOCK_CTRL_GPIO,BOARD_INITPINS_LOCK_CTRL_PORT,BOARD_INITPINS_LOCK_CTRL_PIN,1);
+}
+
+/*手动开锁按键*/
+static void bsp_unlock_sw_pin_init()
+{
+    gpio_pin_config_t pin;
+    pin.pinDirection = kGPIO_DigitalInput;
+    pin.outputLogic = 1U;
+    GPIO_PinInit(BOARD_INITPINS_UNLOCK_SW_GPIO,BOARD_INITPINS_UNLOCK_SW_PORT,BOARD_INITPINS_UNLOCK_SW_PIN,&pin);
+}
+
+/*手动开锁按键状态*/
+uint8_t bsp_unlock_sw_status()
+{
+    uint8_t pin_level,pin_level_main,status;
+    pin_level = GPIO_PinRead(BOARD_INITPINS_UNLOCK_SW_GPIO,BOARD_INITPINS_UNLOCK_SW_PORT,BOARD_INITPINS_UNLOCK_SW_PIN);
+    pin_level_main = GPIO_PinRead(BOARD_INITPINS_UNLOCK_SW_MAIN_GPIO,BOARD_INITPINS_UNLOCK_SW_MAIN_PORT,BOARD_INITPINS_UNLOCK_SW_MAIN_PIN);
+    /*使用2个按键，只要有一个按键按下就认为是有效按压*/
+    if (pin_level == BSP_UNLOCK_SW_STATUS_PRESS_LEVEL || pin_level_main == BSP_UNLOCK_SW_STATUS_PRESS_LEVEL) {
+        status = BSP_UNLOCK_SW_STATUS_PRESS;
+    } else {
+        status = BSP_UNLOCK_SW_STATUS_RELEASE;
+    }
+    return status;
+}
+
+/*锁舌传感器*/
+static void bsp_lock_sensor_pin_init()
+{
+    gpio_pin_config_t pin;
+    pin.pinDirection = kGPIO_DigitalInput;
+    pin.outputLogic = 1;
+    GPIO_PinInit(BOARD_INITPINS_LOCK_SENSOR_GPIO,BOARD_INITPINS_LOCK_SENSOR_PORT,BOARD_INITPINS_LOCK_SENSOR_PIN,&pin);
+}
+
+/*锁孔内传感器*/
+static void bsp_hole_sensor_pin_init()
+{
+    gpio_pin_config_t pin;
+    pin.pinDirection = kGPIO_DigitalInput;
+    pin.outputLogic = 1;
+    GPIO_PinInit(BOARD_INITPINS_HOLE_SENSOR_GPIO,BOARD_INITPINS_HOLE_SENSOR_PORT,BOARD_INITPINS_HOLE_SENSOR_PIN,&pin);
+}
+
+/*门磁传感器*/
+static void bsp_door_sensor_pin_init(void)
+{
+    gpio_pin_config_t pin;
+    pin.pinDirection = kGPIO_DigitalInput;
+    pin.outputLogic = 1;
+    GPIO_PinInit(BOARD_INITPINS_DOOR_SENSOR_GPIO,BOARD_INITPINS_DOOR_SENSOR_PORT,BOARD_INITPINS_DOOR_SENSOR_PIN,&pin);
+}
+
+/*锁舌传感器相关*/
+uint8_t bsp_lock_sensor_status()
+{
+    uint8_t pin_level,status;
+    pin_level = GPIO_PinRead(BOARD_INITPINS_LOCK_SENSOR_GPIO,BOARD_INITPINS_LOCK_SENSOR_PORT,BOARD_INITPINS_LOCK_SENSOR_PIN);
+    if (pin_level == BSP_LOCK_UNLOCKED_LEVEL) {
+        status = BSP_LOCK_STATUS_UNLOCKED;
+    } else {
+        status = BSP_LOCK_STATUS_LOCKED;
+    }
+    return status;
+}
+
+/*锁孔传感器相关*/
+uint8_t bsp_hole_sensor_status()
+{
+    uint8_t pin_level,status;
+    pin_level = GPIO_PinRead(BOARD_INITPINS_HOLE_SENSOR_GPIO,BOARD_INITPINS_HOLE_SENSOR_PORT,BOARD_INITPINS_HOLE_SENSOR_PIN);
+    if (pin_level == BSP_HOLE_OPEN_LEVEL) {
+        status = BSP_HOLE_STATUS_OPEN;
+    } else {
+        status = BSP_HOLE_STATUS_CLOSE;
+    }
+    return status;
+}
+/*门磁传感器*/
+uint8_t bsp_door_sensor_status()
+{
+    uint8_t pin_level,status;
+    pin_level = GPIO_PinRead(BOARD_INITPINS_DOOR_SENSOR_GPIO,BOARD_INITPINS_DOOR_SENSOR_PORT,BOARD_INITPINS_DOOR_SENSOR_PIN);
+    if (pin_level == BSP_DOOR_OPEN_LEVEL) {
+        status = BSP_DOOR_STATUS_OPEN;
+    } else {
+        status = BSP_DOOR_STATUS_CLOSE;
+    }
+    return status;
+}
 
 /*板级初始化*/
-int bsp_board_init()
+int bsp_board_init(void)
 {
-    //bsp_sys_led_pin_init();
-
     BOARD_InitBootPins();
     BOARD_BootClockPLL180M();
-
+    
+    bsp_compressor_ctrl_pin_init();
+    bsp_unlock_sw_pin_init();
+    bsp_lock_ctrl_pin_init();
+    bsp_lock_sensor_pin_init();
+    bsp_hole_sensor_pin_init();
+    bsp_door_sensor_pin_init();
+    
     return 0;
 }
-
 

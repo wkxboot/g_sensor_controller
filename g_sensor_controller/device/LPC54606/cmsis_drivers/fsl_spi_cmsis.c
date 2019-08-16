@@ -25,7 +25,6 @@
 #define FSL_COMPONENT_ID "platform.drivers.flexcomm_spi_cmsis"
 #endif
 
-
 #if (RTE_SPI0 || RTE_SPI1 || RTE_SPI2 || RTE_SPI3 || RTE_SPI4 || RTE_SPI5 || RTE_SPI6 || RTE_SPI7 || RTE_SPI8 || \
      RTE_SPI9)
 
@@ -39,7 +38,7 @@ static const reset_ip_name_t s_spiResetInstance[] = FLEXCOMM_RSTS;
  * ARMCC does not support split the data section automatically, so the driver
  * needs to split the data to separate sections explicitly, to reduce codesize.
  */
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 #define ARMCC_SECTION(section_name) __attribute__((section(section_name)))
 #endif
 
@@ -1258,7 +1257,7 @@ static cmsis_spi_dma_handle_t SPI0_DmaHandle;
 static dma_handle_t SPI0_DmaTxDataHandle;
 static dma_handle_t SPI0_DmaRxDataHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi0_dma_driver_state")
 static cmsis_spi_dma_driver_state_t SPI0_DMADriverState = {
 #else
@@ -1321,7 +1320,7 @@ static ARM_SPI_STATUS SPI0_DMAGetStatus(void)
 
 static cmsis_spi_handle_t SPI0_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi0_interrupt_driver_state")
 static cmsis_spi_interrupt_driver_state_t SPI0_InterruptDriverState = {
 #else
@@ -1412,7 +1411,7 @@ static cmsis_spi_dma_handle_t SPI1_DmaHandle;
 static dma_handle_t SPI1_DmaTxDataHandle;
 static dma_handle_t SPI1_DmaRxDataHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi1_dma_driver_state")
 static cmsis_spi_dma_driver_state_t SPI1_DMADriverState = {
 #else
@@ -1474,7 +1473,7 @@ static ARM_SPI_STATUS SPI1_DMAGetStatus(void)
 
 static cmsis_spi_handle_t SPI1_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi1_interrupt_driver_state")
 static cmsis_spi_interrupt_driver_state_t SPI1_InterruptDriverState = {
 #else
@@ -1567,7 +1566,7 @@ static cmsis_spi_dma_handle_t SPI2_DmaHandle;
 static dma_handle_t SPI2_DmaTxDataHandle;
 static dma_handle_t SPI2_DmaRxDataHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi2_dma_driver_state")
 static cmsis_spi_dma_driver_state_t SPI2_DMADriverState = {
 #else
@@ -1629,7 +1628,7 @@ static ARM_SPI_STATUS SPI2_DMAGetStatus(void)
 
 static cmsis_spi_handle_t SPI2_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi2_interrupt_driver_state")
 static cmsis_spi_interrupt_driver_state_t SPI2_InterruptDriverState = {
 #else
@@ -1722,7 +1721,7 @@ static cmsis_spi_dma_handle_t SPI3_DmaHandle;
 static dma_handle_t SPI3_DmaTxDataHandle;
 static dma_handle_t SPI3_DmaRxDataHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi3_dma_driver_state")
 static cmsis_spi_dma_driver_state_t SPI3_DMADriverState = {
 #else
@@ -1784,7 +1783,7 @@ static ARM_SPI_STATUS SPI3_DMAGetStatus(void)
 
 static cmsis_spi_handle_t SPI3_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi3_interrupt_driver_state")
 static cmsis_spi_interrupt_driver_state_t SPI3_InterruptDriverState = {
 #else
@@ -1877,7 +1876,7 @@ static cmsis_spi_dma_handle_t SPI4_DmaHandle;
 static dma_handle_t SPI4_DmaTxDataHandle;
 static dma_handle_t SPI4_DmaRxDataHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi4_dma_driver_state")
 static cmsis_spi_dma_driver_state_t SPI4_DMADriverState = {
 #else
@@ -1939,7 +1938,7 @@ static ARM_SPI_STATUS SPI4_DMAGetStatus(void)
 
 static cmsis_spi_handle_t SPI4_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi4_interrupt_driver_state")
 static cmsis_spi_interrupt_driver_state_t SPI4_InterruptDriverState = {
 #else
@@ -2032,7 +2031,7 @@ static cmsis_spi_dma_handle_t SPI5_DmaHandle;
 static dma_handle_t SPI5_DmaTxDataHandle;
 static dma_handle_t SPI5_DmaRxDataHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi5_dma_driver_state")
 static cmsis_spi_dma_driver_state_t SPI5_DMADriverState = {
 #else
@@ -2094,7 +2093,7 @@ static ARM_SPI_STATUS SPI5_DMAGetStatus(void)
 
 static cmsis_spi_handle_t SPI5_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi5_interrupt_driver_state")
 static cmsis_spi_interrupt_driver_state_t SPI5_InterruptDriverState = {
 #else
@@ -2187,7 +2186,7 @@ static cmsis_spi_dma_handle_t SPI6_DmaHandle;
 static dma_handle_t SPI6_DmaTxDataHandle;
 static dma_handle_t SPI6_DmaRxDataHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi6_dma_driver_state")
 static cmsis_spi_dma_driver_state_t SPI6_DMADriverState = {
 #else
@@ -2249,7 +2248,7 @@ static ARM_SPI_STATUS SPI6_DMAGetStatus(void)
 
 static cmsis_spi_handle_t SPI6_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi6_interrupt_driver_state")
 static cmsis_spi_interrupt_driver_state_t SPI6_InterruptDriverState = {
 #else
@@ -2342,7 +2341,7 @@ static cmsis_spi_dma_handle_t SPI7_DmaHandle;
 static dma_handle_t SPI7_DmaTxDataHandle;
 static dma_handle_t SPI7_DmaRxDataHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi7_dma_driver_state")
 static cmsis_spi_dma_driver_state_t SPI7_DMADriverState = {
 #else
@@ -2404,7 +2403,7 @@ static ARM_SPI_STATUS SPI7_DMAGetStatus(void)
 
 static cmsis_spi_handle_t SPI7_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi7_interrupt_driver_state")
 static cmsis_spi_interrupt_driver_state_t SPI7_InterruptDriverState = {
 #else
@@ -2497,7 +2496,7 @@ static cmsis_spi_dma_handle_t SPI8_DmaHandle;
 static dma_handle_t SPI8_DmaTxDataHandle;
 static dma_handle_t SPI8_DmaRxDataHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi8_dma_driver_state")
 static cmsis_spi_dma_driver_state_t SPI8_DMADriverState = {
 #else
@@ -2559,7 +2558,7 @@ static ARM_SPI_STATUS SPI8_DMAGetStatus(void)
 
 static cmsis_spi_handle_t SPI8_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi8_interrupt_driver_state")
 static cmsis_spi_interrupt_driver_state_t SPI8_InterruptDriverState = {
 #else
@@ -2652,7 +2651,7 @@ static cmsis_spi_dma_handle_t SPI9_DmaHandle;
 static dma_handle_t SPI9_DmaTxDataHandle;
 static dma_handle_t SPI9_DmaRxDataHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi9_dma_driver_state")
 static cmsis_spi_dma_driver_state_t SPI9_DMADriverState = {
 #else
@@ -2714,7 +2713,7 @@ static ARM_SPI_STATUS SPI9_DMAGetStatus(void)
 
 static cmsis_spi_handle_t SPI9_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("spi9_interrupt_driver_state")
 static cmsis_spi_interrupt_driver_state_t SPI9_InterruptDriverState = {
 #else

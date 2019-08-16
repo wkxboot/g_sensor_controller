@@ -18,14 +18,12 @@
  * limitations under the License.
  */
 
-
 #include "fsl_usart_cmsis.h"
 
 /* Component ID definition, used by tools. */
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.flexcomm_usart_cmsis"
 #endif
-
 
 #if (RTE_USART0 || RTE_USART1 || RTE_USART2 || RTE_USART3 || RTE_USART4 || RTE_USART5 || RTE_USART6 || RTE_USART7 || \
      RTE_USART8 || RTE_USART9)
@@ -36,7 +34,7 @@
  * ARMCC does not support split the data section automatically, so the driver
  * needs to split the data to separate sections explicitly, to reduce codesize.
  */
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 #define ARMCC_SECTION(section_name) __attribute__((section(section_name)))
 #endif
 
@@ -747,7 +745,7 @@ usart_dma_handle_t USART0_DmaHandle;
 dma_handle_t USART0_DmaRxHandle;
 dma_handle_t USART0_DmaTxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart0_dma_driver_state")
 cmsis_usart_dma_driver_state_t usart0_DmaDriverState = {
 #else
@@ -817,7 +815,7 @@ usart_handle_t USART0_Handle;
 static uint8_t usart0_rxRingBuffer[USART_RX_BUFFER_LEN];
 #endif
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart0_non_blocking_driver_state")
 cmsis_usart_non_blocking_driver_state_t usart0_NonBlockingDriverState = {
 #else
@@ -945,7 +943,7 @@ usart_dma_handle_t USART1_DmaHandle;
 dma_handle_t USART1_DmaRxHandle;
 dma_handle_t USART1_DmaTxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart1_dma_driver_state")
 cmsis_usart_dma_driver_state_t usart1_DmaDriverState = {
 #else
@@ -1015,7 +1013,7 @@ usart_handle_t USART1_Handle;
 static uint8_t usart1_rxRingBuffer[USART_RX_BUFFER_LEN];
 #endif
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart1_non_blocking_driver_state")
 cmsis_usart_non_blocking_driver_state_t usart1_NonBlockingDriverState = {
 #else
@@ -1145,7 +1143,7 @@ usart_dma_handle_t USART2_DmaHandle;
 dma_handle_t USART2_DmaRxHandle;
 dma_handle_t USART2_DmaTxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart2_dma_driver_state")
 cmsis_usart_dma_driver_state_t usart2_DmaDriverState = {
 #else
@@ -1215,7 +1213,7 @@ usart_handle_t USART2_Handle;
 static uint8_t usart2_rxRingBuffer[USART_RX_BUFFER_LEN];
 #endif
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart2_non_blocking_driver_state")
 cmsis_usart_non_blocking_driver_state_t usart2_NonBlockingDriverState = {
 #else
@@ -1344,7 +1342,7 @@ usart_dma_handle_t USART3_DmaHandle;
 dma_handle_t USART3_DmaRxHandle;
 dma_handle_t USART3_DmaTxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart3_dma_driver_state")
 cmsis_usart_dma_driver_state_t usart3_DmaDriverState = {
 #else
@@ -1414,7 +1412,7 @@ usart_handle_t USART3_Handle;
 static uint8_t usart3_rxRingBuffer[USART_RX_BUFFER_LEN];
 #endif
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart3_non_blocking_driver_state")
 cmsis_usart_non_blocking_driver_state_t usart3_NonBlockingDriverState = {
 #else
@@ -1542,7 +1540,7 @@ usart_dma_handle_t USART4_DmaHandle;
 dma_handle_t USART4_DmaRxHandle;
 dma_handle_t USART4_DmaTxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart4_dma_driver_state")
 cmsis_usart_dma_driver_state_t usart4_DmaDriverState = {
 #else
@@ -1612,7 +1610,7 @@ usart_handle_t USART4_Handle;
 static uint8_t usart4_rxRingBuffer[USART_RX_BUFFER_LEN];
 #endif
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart4_non_blocking_driver_state")
 cmsis_usart_non_blocking_driver_state_t usart4_NonBlockingDriverState = {
 #else
@@ -1740,7 +1738,7 @@ usart_dma_handle_t USART5_DmaHandle;
 dma_handle_t USART5_DmaRxHandle;
 dma_handle_t USART5_DmaTxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart5_dma_driver_state")
 cmsis_usart_dma_driver_state_t usart5_DmaDriverState = {
 #else
@@ -1810,7 +1808,7 @@ usart_handle_t USART5_Handle;
 static uint8_t usart5_rxRingBuffer[USART_RX_BUFFER_LEN];
 #endif
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart5_non_blocking_driver_state")
 cmsis_usart_non_blocking_driver_state_t usart5_NonBlockingDriverState = {
 #else
@@ -1938,7 +1936,7 @@ usart_dma_handle_t USART6_DmaHandle;
 dma_handle_t USART6_DmaRxHandle;
 dma_handle_t USART6_DmaTxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart6_dma_driver_state")
 cmsis_usart_dma_driver_state_t usart6_DmaDriverState = {
 #else
@@ -2008,7 +2006,7 @@ usart_handle_t USART6_Handle;
 static uint8_t usart6_rxRingBuffer[USART_RX_BUFFER_LEN];
 #endif
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart6_non_blocking_driver_state")
 cmsis_usart_non_blocking_driver_state_t usart6_NonBlockingDriverState = {
 #else
@@ -2136,7 +2134,7 @@ usart_dma_handle_t USART7_DmaHandle;
 dma_handle_t USART7_DmaRxHandle;
 dma_handle_t USART7_DmaTxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart7_dma_driver_state")
 cmsis_usart_dma_driver_state_t usart7_DmaDriverState = {
 #else
@@ -2206,7 +2204,7 @@ usart_handle_t USART7_Handle;
 static uint8_t usart7_rxRingBuffer[USART_RX_BUFFER_LEN];
 #endif
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart7_non_blocking_driver_state")
 cmsis_usart_non_blocking_driver_state_t usart7_NonBlockingDriverState = {
 #else
@@ -2334,7 +2332,7 @@ usart_dma_handle_t USART8_DmaHandle;
 dma_handle_t USART8_DmaRxHandle;
 dma_handle_t USART8_DmaTxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart8_dma_driver_state")
 cmsis_usart_dma_driver_state_t usart8_DmaDriverState = {
 #else
@@ -2404,7 +2402,7 @@ usart_handle_t USART8_Handle;
 static uint8_t usart8_rxRingBuffer[USART_RX_BUFFER_LEN];
 #endif
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart8_non_blocking_driver_state")
 cmsis_usart_non_blocking_driver_state_t usart8_NonBlockingDriverState = {
 #else
@@ -2534,7 +2532,7 @@ usart_dma_handle_t USART9_DmaHandle;
 dma_handle_t USART9_DmaRxHandle;
 dma_handle_t USART9_DmaTxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart9_dma_driver_state")
 cmsis_usart_dma_driver_state_t usart9_DmaDriverState = {
 #else
@@ -2604,7 +2602,7 @@ usart_handle_t USART9_Handle;
 static uint8_t usart9_rxRingBuffer[USART_RX_BUFFER_LEN];
 #endif
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("usart9_non_blocking_driver_state")
 cmsis_usart_non_blocking_driver_state_t usart9_NonBlockingDriverState = {
 #else

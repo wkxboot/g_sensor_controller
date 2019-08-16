@@ -1,35 +1,9 @@
 /*
- * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- *  that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_rit.h"
@@ -38,7 +12,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.rit"
 #endif
-
 
 /*******************************************************************************
  * Prototypes
@@ -63,6 +36,11 @@ static RIT_Type *const s_ritBases[] = RIT_BASE_PTRS;
 static const clock_ip_name_t s_ritClocks[] = RIT_CLOCKS;
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
+#if !(defined(FSL_FEATURE_RIT_HAS_NO_RESET) && FSL_FEATURE_RIT_HAS_NO_RESET)
+/*! @brief Pointers to RIT resets for each instance. */
+static const reset_ip_name_t s_ritResets[] = RIT_RSTS;
+#endif
+
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -84,13 +62,34 @@ static uint32_t RIT_GetInstance(RIT_Type *base)
     return instance;
 }
 
+/*!
+ * brief Fills in the RIT configuration structure with the default settings.
+ *
+ * The default values are as follows.
+ * code
+ *     config->enableRunInDebug = false;
+ * endcode
+ * param config Pointer to the onfiguration structure.
+ */
 void RIT_GetDefaultConfig(rit_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
+
     /* Timer operation are no effect in Debug mode */
     config->enableRunInDebug = false;
 }
 
+/*!
+ * brief Ungates the RIT clock, enables the RIT module, and configures the peripheral for basic operations.
+ *
+ * note This API should be called at the beginning of the application using the RIT driver.
+ *
+ * param base   RIT peripheral base address
+ * param config Pointer to the user's RIT config structure
+ */
 void RIT_Init(RIT_Type *base, const rit_config_t *config)
 {
     assert(config);
@@ -99,6 +98,11 @@ void RIT_Init(RIT_Type *base, const rit_config_t *config)
     /* Ungate the RIT clock*/
     CLOCK_EnableClock(s_ritClocks[RIT_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#if !(defined(FSL_FEATURE_RIT_HAS_NO_RESET) && FSL_FEATURE_RIT_HAS_NO_RESET)
+    /* Reset the RIT module */
+    RESET_PeripheralReset(s_ritResets[RIT_GetInstance(base)]);
+#endif
 
     /* Enable RIT timers */
     base->CTRL |= RIT_CTRL_RITEN_MASK;
@@ -114,16 +118,32 @@ void RIT_Init(RIT_Type *base, const rit_config_t *config)
     }
 }
 
+/*!
+ * brief Gates the RIT clock and disables the RIT module.
+ *
+ * param base RIT peripheral base address
+ */
 void RIT_Deinit(RIT_Type *base)
 {
     /* Disable RIT timers */
     base->CTRL &= ~RIT_CTRL_RITEN_MASK;
-#ifdef FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate the RIT clock*/
     CLOCK_DisableClock(s_ritClocks[RIT_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Sets the timer period in units of count.
+ *
+ * This function sets the RI compare value. If the counter value equals to the compare value,
+ * it will generate an interrupt.
+ *
+ * note Users can call the utility macros provided in fsl_common.h to convert to ticks
+ *
+ * param base    RIT peripheral base address
+ * param count   Timer period in units of ticks
+ */
 void RIT_SetTimerCompare(RIT_Type *base, uint64_t count)
 {
     /* Disable RIT timers */
@@ -132,12 +152,33 @@ void RIT_SetTimerCompare(RIT_Type *base, uint64_t count)
     base->COMPVAL_H = (uint16_t)(count >> 32U);
 }
 
+/*!
+ * brief Sets the mask bit of count compare.
+ *
+ * This function sets the RI mask value. A 1 written to any bit will force the compare to
+ * be true for the corresponding bit of the counter and compare register (causes the comparison of
+ * the register bits to be always true).
+ *
+ * note Users can call the utility macros provided in fsl_common.h to convert to ticks
+ *
+ * param base    RIT peripheral base address
+ * param count   Timer period in units of ticks
+ */
 void RIT_SetMaskBit(RIT_Type *base, uint64_t count)
 {
     base->MASK = (uint32_t)count;
     base->MASK_H = (uint16_t)(count >> 32U);
 }
 
+/*!
+ * brief Reads the current value of compare register.
+ *
+ * note Users can call the utility macros provided in fsl_common.h to convert ticks to usec or msec
+ *
+ * param base    RIT peripheral base address
+ *
+ * return Current RI compare value
+ */
 uint64_t RIT_GetCompareTimerCount(RIT_Type *base)
 {
     uint16_t valueH = 0U;
@@ -150,6 +191,18 @@ uint64_t RIT_GetCompareTimerCount(RIT_Type *base)
     return (((uint64_t)valueH << 32U) + (uint64_t)(valueL));
 }
 
+/*!
+ * brief Reads the current timer counting value of counter register.
+ *
+ * This function returns the real-time timer counting value, in a range from 0 to a
+ * timer period.
+ *
+ * note Users can call the utility macros provided in fsl_common.h to convert ticks to usec or msec
+ *
+ * param base    RIT peripheral base address
+ *
+ * return Current timer counting value in ticks
+ */
 uint64_t RIT_GetCounterTimerCount(RIT_Type *base)
 {
     uint16_t valueH = 0U;
@@ -162,6 +215,15 @@ uint64_t RIT_GetCounterTimerCount(RIT_Type *base)
     return (((uint64_t)valueH << 32U) + (uint64_t)(valueL));
 }
 
+/*!
+ * brief Reads the current value of mask register.
+ *
+ * note Users can call the utility macros provided in fsl_common.h to convert ticks to usec or msec
+ *
+ * param base    RIT peripheral base address
+ *
+ * return Current RI mask value
+ */
 uint64_t RIT_GetMaskTimerCount(RIT_Type *base)
 {
     uint16_t valueH = 0U;

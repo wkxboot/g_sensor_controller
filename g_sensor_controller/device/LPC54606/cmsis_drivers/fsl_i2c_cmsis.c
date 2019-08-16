@@ -18,14 +18,12 @@
  * limitations under the License.
  */
 
-
 #include "fsl_i2c_cmsis.h"
 
 /* Component ID definition, used by tools. */
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.flexcomm_i2c_cmsis"
 #endif
-
 
 #if (RTE_I2C0 || RTE_I2C1 || RTE_I2C2 || RTE_I2C3 || RTE_I2C4 || RTE_I2C5 || RTE_I2C6 || RTE_I2C7 || RTE_I2C8 || \
      RTE_I2C9)
@@ -36,7 +34,7 @@
  * ARMCC does not support split the data section automatically, so the driver
  * needs to split the data to separate sections explicitly, to reduce codesize.
  */
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 #define ARMCC_SECTION(section_name) __attribute__((section(section_name)))
 #endif
 
@@ -593,11 +591,19 @@ int32_t I2C_InterruptGetDataCount(cmsis_i2c_interrupt_driver_state_t *i2c)
 int32_t I2C_InterruptControl(uint32_t control, uint32_t arg, cmsis_i2c_interrupt_driver_state_t *i2c)
 {
     uint32_t baudRate_Bps;
+    uint32_t clkDiv;
 
     switch (control)
     {
         /*Set Own Slave Address; arg = slave address*/
         case ARM_I2C_OWN_ADDRESS:
+            /* Use as slave, set CLKDIV for clock stretching, ensure data set up time for standard mode 250ns. */
+            /* divVal = (sourceClock_Hz / 1000000) * (dataSetupTime_ns / 1000) */
+            clkDiv = i2c->resource->GetFreq() / 1000U;
+            clkDiv = (clkDiv * 250) / 1000000U;
+            i2c->resource->base->CLKDIV = clkDiv & I2C_CLKDIV_DIVVAL_MASK;
+
+            /* Set slave address. */
             I2C_SlaveSetAddress(i2c->resource->base, kI2C_SlaveAddressRegister0, arg, false);
             /* set Slave address 0 qual */
             i2c->resource->base->SLVQUAL0 = I2C_SLVQUAL0_QUALMODE0(0) | I2C_SLVQUAL0_SLVQUAL0(0);
@@ -742,7 +748,7 @@ cmsis_i2c_dma_resource_t I2C0_DmaResource = {RTE_I2C0_Master_DMA_BASE, RTE_I2C0_
 i2c_master_dma_handle_t I2C0_DmaHandle;
 dma_handle_t I2C0_DmaTxRxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c0_dma_driver_state")
 cmsis_i2c_dma_driver_state_t I2C0_DmaDriverState = {
 #else
@@ -799,7 +805,7 @@ ARM_I2C_STATUS I2C0_Master_DmaGetStatus(void)
 
 cmsis_i2c_handle_t I2C0_handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c0_interrupt_driver_state")
 cmsis_i2c_interrupt_driver_state_t I2C0_InterruptDriverState = {
 #else
@@ -897,7 +903,7 @@ cmsis_i2c_dma_resource_t I2C1_DmaResource = {RTE_I2C1_Master_DMA_BASE, RTE_I2C1_
 i2c_master_dma_handle_t I2C1_DmaHandle;
 dma_handle_t I2C1_DmaTxRxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c1_dma_driver_state")
 cmsis_i2c_dma_driver_state_t I2C1_DmaDriverState = {
 #else
@@ -954,7 +960,7 @@ ARM_I2C_STATUS I2C1_Master_DmaGetStatus(void)
 
 cmsis_i2c_handle_t I2C1_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c1_interrupt_driver_state")
 cmsis_i2c_interrupt_driver_state_t I2C1_InterruptDriverState = {
 #else
@@ -1051,7 +1057,7 @@ cmsis_i2c_dma_resource_t I2C2_DmaResource = {RTE_I2C2_Master_DMA_BASE, RTE_I2C2_
 i2c_master_dma_handle_t I2C2_DmaHandle;
 dma_handle_t I2C2_DmaTxRxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c2_dma_driver_state")
 cmsis_i2c_dma_driver_state_t I2C2_DmaDriverState = {
 #else
@@ -1108,7 +1114,7 @@ ARM_I2C_STATUS I2C2_Master_DmaGetStatus(void)
 
 cmsis_i2c_handle_t I2C2_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c2_interrupt_driver_state")
 cmsis_i2c_interrupt_driver_state_t I2C2_InterruptDriverState = {
 #else
@@ -1206,7 +1212,7 @@ cmsis_i2c_dma_resource_t I2C3_DmaResource = {RTE_I2C3_Master_DMA_BASE, RTE_I2C3_
 i2c_master_dma_handle_t I2C3_DmaHandle;
 dma_handle_t I2C3_DmaTxRxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c3_dma_driver_state")
 cmsis_i2c_dma_driver_state_t I2C3_DmaDriverState = {
 #else
@@ -1263,7 +1269,7 @@ ARM_I2C_STATUS I2C3_Master_DmaGetStatus(void)
 
 cmsis_i2c_handle_t I2C3_Handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c3_interrupt_driver_state")
 cmsis_i2c_interrupt_driver_state_t I2C3_InterruptDriverState = {
 #else
@@ -1359,7 +1365,7 @@ cmsis_i2c_dma_resource_t I2C4_DmaResource = {RTE_I2C4_Master_DMA_BASE, RTE_I2C4_
 i2c_master_dma_handle_t I2C4_DmaHandle;
 dma_handle_t I2C4_DmaTxRxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c4_dma_driver_state")
 cmsis_i2c_dma_driver_state_t I2C4_DmaDriverState = {
 #else
@@ -1416,7 +1422,7 @@ ARM_I2C_STATUS I2C4_Master_DmaGetStatus(void)
 
 cmsis_i2c_handle_t I2C4_handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c4_interrupt_driver_state")
 cmsis_i2c_interrupt_driver_state_t I2C4_InterruptDriverState = {
 #else
@@ -1513,7 +1519,7 @@ cmsis_i2c_dma_resource_t I2C5_DmaResource = {RTE_I2C5_Master_DMA_BASE, RTE_I2C5_
 i2c_master_dma_handle_t I2C5_DmaHandle;
 dma_handle_t I2C5_DmaTxRxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c5_dma_driver_state")
 cmsis_i2c_dma_driver_state_t I2C5_DmaDriverState = {
 #else
@@ -1570,7 +1576,7 @@ ARM_I2C_STATUS I2C5_Master_DmaGetStatus(void)
 
 cmsis_i2c_handle_t I2C5_handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c5_interrupt_driver_state")
 cmsis_i2c_interrupt_driver_state_t I2C5_InterruptDriverState = {
 #else
@@ -1667,7 +1673,7 @@ cmsis_i2c_dma_resource_t I2C6_DmaResource = {RTE_I2C6_Master_DMA_BASE, RTE_I2C6_
 i2c_master_dma_handle_t I2C6_DmaHandle;
 dma_handle_t I2C6_DmaTxRxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c6_dma_driver_state")
 cmsis_i2c_dma_driver_state_t I2C6_DmaDriverState = {
 #else
@@ -1724,7 +1730,7 @@ ARM_I2C_STATUS I2C6_Master_DmaGetStatus(void)
 
 cmsis_i2c_handle_t I2C6_handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c6_interrupt_driver_state")
 cmsis_i2c_interrupt_driver_state_t I2C6_InterruptDriverState = {
 #else
@@ -1821,7 +1827,7 @@ cmsis_i2c_dma_resource_t I2C7_DmaResource = {RTE_I2C7_Master_DMA_BASE, RTE_I2C7_
 i2c_master_dma_handle_t I2C7_DmaHandle;
 dma_handle_t I2C7_DmaTxRxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c7_dma_driver_state")
 cmsis_i2c_dma_driver_state_t I2C7_DmaDriverState = {
 #else
@@ -1877,7 +1883,7 @@ ARM_I2C_STATUS I2C7_Master_DmaGetStatus(void)
 #else
 cmsis_i2c_handle_t I2C7_handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c7_interrupt_driver_state")
 cmsis_i2c_interrupt_driver_state_t I2C7_InterruptDriverState = {
 #else
@@ -1974,7 +1980,7 @@ cmsis_i2c_dma_resource_t I2C8_DmaResource = {RTE_I2C8_Master_DMA_BASE, RTE_I2C8_
 i2c_master_dma_handle_t I2C8_DmaHandle;
 dma_handle_t I2C8_DmaTxRxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c8_dma_driver_state")
 cmsis_i2c_dma_driver_state_t I2C8_DmaDriverState = {
 #else
@@ -2031,7 +2037,7 @@ ARM_I2C_STATUS I2C8_Master_DmaGetStatus(void)
 
 cmsis_i2c_handle_t I2C8_handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c8_interrupt_driver_state")
 cmsis_i2c_interrupt_driver_state_t I2C8_InterruptDriverState = {
 #else
@@ -2128,7 +2134,7 @@ cmsis_i2c_dma_resource_t I2C9_DmaResource = {RTE_I2C9_Master_DMA_BASE, RTE_I2C9_
 i2c_master_dma_handle_t I2C9_DmaHandle;
 dma_handle_t I2C9_DmaTxRxHandle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c9_dma_driver_state")
 cmsis_i2c_dma_driver_state_t I2C9_DmaDriverState = {
 #else
@@ -2185,7 +2191,7 @@ ARM_I2C_STATUS I2C9_Master_DmaGetStatus(void)
 
 cmsis_i2c_handle_t I2C9_handle;
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
 ARMCC_SECTION("i2c9_interrupt_driver_state")
 cmsis_i2c_interrupt_driver_state_t I2C9_InterruptDriverState = {
 #else

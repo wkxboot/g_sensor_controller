@@ -34,9 +34,24 @@
 #include "cmsis_os.h"
 #include "board.h"
 #include "tasks_init.h"
+#include "device_env.h"
+#include "firmware_version.h"
 #include "log.h"
 
 
+/*
+* @brief 硬件延时
+* @param 无
+* @param
+* @return 无
+* @note
+*/
+void hal_delay(void)
+{
+    volatile uint32_t sleep = 50000000;
+
+    while (sleep --);
+}
 
 
 /*******************************************************************************
@@ -45,7 +60,7 @@
 
 uint32_t log_time()
 {
-return osKernelSysTick();
+    return osKernelSysTick();
 }
 
 /*******************************************************************************
@@ -56,10 +71,37 @@ return osKernelSysTick();
  */
 int main(void)
 { 
-    int rc;
-    rc = bsp_board_init();
-    log_assert(rc == 0);
+    bsp_board_init();
     log_init();
+    log_info("g sensor firmware version: %s.\r\n",FIRMWARE_VERSION_STR);
+
+    /*环境变量初始化*/
+    device_env_init();
+
+#if 0
+    /*查看环境变量*/
+    flag = device_env_get(ENV_BOOTLOADER_FLAG_NAME);
+    /*第一次运行*/
+    if (flag == NULL) {
+        log_info("first boot.set init...\r\n");
+        device_env_set(ENV_BOOTLOADER_FLAG_NAME,ENV_BOOTLOADER_INIT);
+        log_info("done.reboot...\r\n");
+        /*主动复位*/
+        hal_delay();
+        __NVIC_SystemReset();
+    }
+
+    if (flag) {
+        /*如果是更新后第一次运行 就置为OK*/
+        if (strcmp(flag,ENV_BOOTLOADER_COMPLETE) == 0) {
+            log_info("update first boot.set ok...\r\n");
+            device_env_set(ENV_BOOTLOADER_FLAG_NAME,ENV_BOOTLOADER_OK);
+            log_info("done.\r\n");
+        }
+
+    }
+#endif
+
     tasks_init();
     
     /* Start scheduler */

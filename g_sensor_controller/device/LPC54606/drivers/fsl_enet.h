@@ -1,35 +1,9 @@
 /*
- * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- *  that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_ENET_H_
 #define _FSL_ENET_H_
@@ -48,7 +22,7 @@
 /*! @name Driver version */
 /*@{*/
 /*! @brief Defines the driver version. */
-#define FSL_ENET_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0. */
+#define FSL_ENET_DRIVER_VERSION (MAKE_VERSION(2, 1, 2)) /*!< Version 2.1.2. */
 /*@}*/
 
 /*! @name Control and status region bit masks of the receive buffer descriptor. */
@@ -86,19 +60,19 @@
 /*! @brief Defines for read format. */
 #define ENET_TXDESCRIP_RD_BL1_MASK (0x3fffU)
 #define ENET_TXDESCRIP_RD_BL2_MASK (ENET_TXDESCRIP_RD_BL1_MASK << 16)
-#define ENET_TXDESCRIP_RD_BL1(n) ((uint32_t)(n) & ENET_TXDESCRIP_RD_BL1_MASK)
-#define ENET_TXDESCRIP_RD_BL2(n) (((uint32_t)(n) & ENET_TXDESCRIP_RD_BL1_MASK) << 16)
+#define ENET_TXDESCRIP_RD_BL1(n) ((uint32_t)(n)&ENET_TXDESCRIP_RD_BL1_MASK)
+#define ENET_TXDESCRIP_RD_BL2(n) (((uint32_t)(n)&ENET_TXDESCRIP_RD_BL1_MASK) << 16)
 #define ENET_TXDESCRIP_RD_TTSE_MASK (1U << 30)
 #define ENET_TXDESCRIP_RD_IOC_MASK (1U << 31)
 
 #define ENET_TXDESCRIP_RD_FL_MASK (0x7FFFU)
-#define ENET_TXDESCRIP_RD_FL(n) ((uint32_t)(n) & ENET_TXDESCRIP_RD_FL_MASK)
-#define ENET_TXDESCRIP_RD_CIC(n) (((uint32_t)(n) & 0x3) << 16)
+#define ENET_TXDESCRIP_RD_FL(n) ((uint32_t)(n)&ENET_TXDESCRIP_RD_FL_MASK)
+#define ENET_TXDESCRIP_RD_CIC(n) (((uint32_t)(n)&0x3) << 16)
 #define ENET_TXDESCRIP_RD_TSE_MASK (1U << 18)
-#define ENET_TXDESCRIP_RD_SLOT(n) (((uint32_t)(n) & 0x0f) << 19)
-#define ENET_TXDESCRIP_RD_SAIC(n) (((uint32_t)(n) & 0x07) << 23)
-#define ENET_TXDESCRIP_RD_CPC(n) (((uint32_t)(n) & 0x03) << 26)
-#define ENET_TXDESCRIP_RD_LDFD(n) (((uint32_t)(n) & 0x03) << 28)
+#define ENET_TXDESCRIP_RD_SLOT(n) (((uint32_t)(n)&0x0f) << 19)
+#define ENET_TXDESCRIP_RD_SAIC(n) (((uint32_t)(n)&0x07) << 23)
+#define ENET_TXDESCRIP_RD_CPC(n) (((uint32_t)(n)&0x03) << 26)
+#define ENET_TXDESCRIP_RD_LDFD(n) (((uint32_t)(n)&0x03) << 28)
 #define ENET_TXDESCRIP_RD_LD_MASK (1U << 28)
 #define ENET_TXDESCRIP_RD_FD_MASK (1U << 29)
 #define ENET_TXDESCRIP_RD_CTXT_MASK (1U << 30)
@@ -122,13 +96,13 @@
 /*! @name Defines some Ethernet parameters. */
 /*@{*/
 
-#define ENET_FRAME_MAX_FRAMELEN (1518U)/*!< Default maximum Ethernet frame size. */
-#define ENET_ADDR_ALIGNMENT (0x3U)     /*!< Recommended ethernet buffer alignment. */
-#define ENET_BUFF_ALIGNMENT (4U)       /*!< Receive buffer alignment shall be 4bytes-aligned. */
-#define ENET_RING_NUM_MAX (2U)         /*!< The Maximum number of tx/rx descriptor rings. */
-#define ENET_MTL_RXFIFOSIZE (2048U)    /*!< The rx fifo size. */
-#define ENET_MTL_TXFIFOSIZE (2048U)    /*!< The tx fifo size. */
-#define ENET_MACINT_ENUM_OFFSET (16U)  /*!< The offest for mac interrupt in enum type. */
+#define ENET_FRAME_MAX_FRAMELEN (1518U) /*!< Default maximum Ethernet frame size. */
+#define ENET_ADDR_ALIGNMENT (0x3U)      /*!< Recommended ethernet buffer alignment. */
+#define ENET_BUFF_ALIGNMENT (4U)        /*!< Receive buffer alignment shall be 4bytes-aligned. */
+#define ENET_RING_NUM_MAX (2U)          /*!< The Maximum number of tx/rx descriptor rings. */
+#define ENET_MTL_RXFIFOSIZE (2048U)     /*!< The rx fifo size. */
+#define ENET_MTL_TXFIFOSIZE (2048U)     /*!< The tx fifo size. */
+#define ENET_MACINT_ENUM_OFFSET (16U)   /*!< The offest for mac interrupt in enum type. */
 /*@}*/
 
 #ifdef ENET_PTP1588FEATURE_REQUIRED
@@ -158,31 +132,36 @@ enum _enet_status
 };
 
 /*! @brief Defines the MII/RMII mode for data interface between the MAC and the PHY. */
-typedef enum _enet_mii_mode {
+typedef enum _enet_mii_mode
+{
     kENET_MiiMode = 0U, /*!< MII mode for data interface. */
     kENET_RmiiMode = 1U /*!< RMII mode for data interface. */
 } enet_mii_mode_t;
 
 /*! @brief Defines the 10/100 Mbps speed for the MII data interface. */
-typedef enum _enet_mii_speed {
+typedef enum _enet_mii_speed
+{
     kENET_MiiSpeed10M = 0U,  /*!< Speed 10 Mbps. */
     kENET_MiiSpeed100M = 1U, /*!< Speed 100 Mbps. */
 } enet_mii_speed_t;
 
 /*! @brief Defines the half or full duplex for the MII data interface. */
-typedef enum _enet_mii_duplex {
+typedef enum _enet_mii_duplex
+{
     kENET_MiiHalfDuplex = 0U, /*!< Half duplex mode. */
     kENET_MiiFullDuplex       /*!< Full duplex mode. */
 } enet_mii_duplex_t;
 
 /*! @brief Define the MII opcode for normal MDIO_CLAUSES_22 Frame. */
-typedef enum _enet_mii_normal_opcode {
+typedef enum _enet_mii_normal_opcode
+{
     kENET_MiiWriteFrame = 1U, /*!< Write frame operation for a valid MII management frame. */
     kENET_MiiReadFrame = 3U   /*!< Read frame operation for a valid MII management frame. */
 } enet_mii_normal_opcode;
 
 /*! @brief Define the DMA maximum transmit burst length. */
-typedef enum _enet_dma_burstlen {
+typedef enum _enet_dma_burstlen
+{
     kENET_BurstLen1 = 0x00001U,   /*!< DMA burst length 1. */
     kENET_BurstLen2 = 0x00002U,   /*!< DMA burst length 2. */
     kENET_BurstLen4 = 0x00004U,   /*!< DMA burst length 4. */
@@ -195,7 +174,8 @@ typedef enum _enet_dma_burstlen {
 } enet_dma_burstlen;
 
 /*! @brief Define the flag for the descriptor. */
-typedef enum _enet_desc_flag {
+typedef enum _enet_desc_flag
+{
     kENET_MiddleFlag = 0, /*!< It's a middle descriptor of the frame. */
     kENET_FirstFlagOnly,  /*!< It's the first descriptor of the frame. */
     kENET_LastFlagOnly,   /*!< It's the last descriptor of the frame. */
@@ -203,13 +183,15 @@ typedef enum _enet_desc_flag {
 } enet_desc_flag;
 
 /*! @brief Define the system time adjust operation control. */
-typedef enum _enet_systime_op {
+typedef enum _enet_systime_op
+{
     kENET_SystimeAdd = 0U,     /*!< System time add to. */
     kENET_SystimeSubtract = 1U /*!< System time subtract. */
 } enet_systime_op;
 
 /*! @brief Define the system time rollover control. */
-typedef enum _enet_ts_rollover_type {
+typedef enum _enet_ts_rollover_type
+{
     kENET_BinaryRollover = 0, /*!< System time binary rollover.*/
     kENET_DigitalRollover = 1 /*!< System time digital rollover.*/
 } enet_ts_rollover_type;
@@ -224,7 +206,8 @@ typedef enum _enet_ts_rollover_type {
  * ENET_PTP1588FEATURE_REQUIRED is defined or else the timestamp will be mess-up
  * when the overflow happens.
  */
-typedef enum _enet_special_config {
+typedef enum _enet_special_config
+{
 
     /***********************DMA CONFGI**********************************************/
     kENET_DescDoubleBuffer = 0x0001U, /*!< The double buffer is used in the tx/rx descriptor. */
@@ -242,7 +225,8 @@ typedef enum _enet_special_config {
  * enumeration uses one-bot encoding to allow a logical OR of multiple
  * members.
  */
-typedef enum _enet_dma_interrupt_enable {
+typedef enum _enet_dma_interrupt_enable
+{
     kENET_DmaTx = ENET_DMA_CH_DMA_CHX_INT_EN_TIE_MASK,                 /*!< Tx interrupt. */
     kENET_DmaTxStop = ENET_DMA_CH_DMA_CHX_INT_EN_TSE_MASK,             /*!< Tx stop interrupt. */
     kENET_DmaTxBuffUnavail = ENET_DMA_CH_DMA_CHX_INT_EN_TBUE_MASK,     /*!< Tx buffer unavailable. */
@@ -259,40 +243,46 @@ typedef enum _enet_dma_interrupt_enable {
  * enumeration uses one-bot encoding to allow a logical OR of multiple
  * members.
  */
-typedef enum _enet_mac_interrupt_enable {
+typedef enum _enet_mac_interrupt_enable
+{
     kENET_MacPmt = (ENET_MAC_INTR_EN_PMTIE_MASK << ENET_MACINT_ENUM_OFFSET),
     kENET_MacTimestamp = (ENET_MAC_INTR_EN_TSIE_MASK << ENET_MACINT_ENUM_OFFSET),
 } enet_mac_interrupt_enable_t;
 
 /*! @brief Defines the common interrupt event for callback use. */
-typedef enum _enet_event {
-    kENET_RxIntEvent,     /*!< Receive interrupt event. */
-    kENET_TxIntEvent,     /*!< Transmit interrupt event. */
-    kENET_WakeUpIntEvent, /*!< Wake up interrupt event. */
+typedef enum _enet_event
+{
+    kENET_RxIntEvent,        /*!< Receive interrupt event. */
+    kENET_TxIntEvent,        /*!< Transmit interrupt event. */
+    kENET_WakeUpIntEvent,    /*!< Wake up interrupt event. */
     kENET_TimeStampIntEvent, /*!< Time stamp interrupt event. */
 } enet_event_t;
 
 /*! @brief Define the DMA transmit arbitration for multi-queue. */
-typedef enum _enet_dma_tx_sche {
+typedef enum _enet_dma_tx_sche
+{
     kENET_FixPri = 0,      /*!< Fixed priority. channel 0 has lower priority than channel 1. */
     kENET_WeightStrPri,    /*!< Weighted(burst length) strict priority. */
     kENET_WeightRoundRobin /*!< Weighted (weight factor) round robin. */
 } enet_dma_tx_sche;
 
 /*! @brief Define the MTL tx scheduling algorithm for multiple queues/rings. */
-typedef enum _enet_mtl_multiqueue_txsche {
+typedef enum _enet_mtl_multiqueue_txsche
+{
     kENET_txWeightRR = 0U, /*!< Tx weight round-robin. */
     kENET_txStrPrio = 3U,  /*!< Tx strict priority. */
 } enet_mtl_multiqueue_txsche;
 
 /*! @brief Define the MTL rx scheduling algorithm for multiple queues/rings. */
-typedef enum _enet_mtl_multiqueue_rxsche {
+typedef enum _enet_mtl_multiqueue_rxsche
+{
     kENET_rxStrPrio = 0U,  /*!< Tx weight round-robin, rx strict priority. */
     kENET_rxWeightStrPrio, /*!< Tx strict priority, rx weight strict priority. */
 } enet_mtl_multiqueue_rxsche;
 
 /*! @brief Define the MTL rx queue and DMA channel mapping. */
-typedef enum _enet_mtl_rxqueuemap {
+typedef enum _enet_mtl_rxqueuemap
+{
     kENET_StaticDirctMap = 0x100U, /*!< The received fame in rx Qn(n = 0,1) direclty map to dma channel n. */
     kENET_DynamicMap =
         0x1010U, /*!< The received frame in rx Qn(n = 0,1) map to the dma channel m(m = 0,1) related with the same Mac.
@@ -300,7 +290,8 @@ typedef enum _enet_mtl_rxqueuemap {
 } enet_mtl_rxqueuemap;
 
 /*! @brief Defines the ENET PTP message related constant. */
-typedef enum _enet_ptp_event_type {
+typedef enum _enet_ptp_event_type
+{
     kENET_PtpEventMsgType = 3U,  /*!< PTP event message type. */
     kENET_PtpSrcPortIdLen = 10U, /*!< PTP message sequence id length. */
     kENET_PtpEventPort = 319U,   /*!< PTP event port number. */
@@ -552,8 +543,8 @@ void ENET_Deinit(ENET_Type *base);
 /*!
  * @brief Initialize for all ENET descriptors.
  *
- * @note This function is do all tx/rx descriptors initialization. Because this API 
- *  read all interrupt registers first and then set the interrupt flag for all descriptos, 
+ * @note This function is do all tx/rx descriptors initialization. Because this API
+ *  read all interrupt registers first and then set the interrupt flag for all descriptos,
  * if the interrupt register is set. so the descriptor initialization should be called
  * after ENET_Init(), ENET_EnableInterrupts() and ENET_CreateHandle()(if transactional APIs
  * are used).
@@ -674,10 +665,14 @@ static inline void ENET_SetMacAddr(ENET_Type *base, uint8_t *macAddr)
 {
     assert(macAddr);
 
-    /* Set Macaddr */
-    base->MAC_ADDR_LOW = ((uint32_t)macAddr[3] << 24) | ((uint32_t)macAddr[2] << 16) | ((uint32_t)macAddr[1] << 8) |
-                         ((uint32_t)macAddr[0]);
-    base->MAC_ADDR_HIGH = ((uint32_t)macAddr[5] << 8) | ((uint32_t)macAddr[4]);
+    uint32_t lowAddress = ((uint32_t)macAddr[3] << 24) | ((uint32_t)macAddr[2] << 16) | ((uint32_t)macAddr[1] << 8) |
+                          ((uint32_t)macAddr[0]);
+    uint32_t highAddress = ((uint32_t)macAddr[5] << 8) | ((uint32_t)macAddr[4]);
+    /* Set Macaddr, the MAC address registers are configured to be double-synchronized to the MII clock
+      domains, then the synchronization is triggered only when bits 31:24 (in little-endian mode)
+      or bits 7:0 (in Big-Endian mode) of the MAC address low register are written to.*/
+    base->MAC_ADDR_HIGH = highAddress;
+    base->MAC_ADDR_LOW = lowAddress;
 }
 
 /*!
@@ -688,6 +683,30 @@ static inline void ENET_SetMacAddr(ENET_Type *base, uint8_t *macAddr)
  *        The pointer is allocated by application and input into the API.
  */
 void ENET_GetMacAddr(ENET_Type *base, uint8_t *macAddr);
+
+/*!
+ * @brief Enable ENET device to accept all multicast frames.
+ *
+ * @param base    ENET peripheral base address.
+ */
+static inline void ENET_AcceptAllMulticast(ENET_Type *base)
+{
+    uint32_t reg = base->MAC_FRAME_FILTER;
+
+    base->MAC_FRAME_FILTER = reg | ENET_MAC_FRAME_FILTER_PM_MASK;
+}
+
+/*!
+ * @brief ENET device reject to accept all multicast frames.
+ *
+ * @param base  ENET peripheral base address.
+ */
+static inline void ENET_RejectAllMulticast(ENET_Type *base)
+{
+    uint32_t reg = base->MAC_FRAME_FILTER;
+
+    base->MAC_FRAME_FILTER = reg & ~ENET_MAC_FRAME_FILTER_PM_MASK;
+}
 
 /*!
  * @brief Set the MAC to enter into power down mode.
@@ -737,7 +756,7 @@ static inline void ENET_ExitPowerDown(ENET_Type *base)
  * @endcode
  *
  * @param base  ENET peripheral base address.
- * @param mask  ENET interrupts to enable. This is a logical OR of both 
+ * @param mask  ENET interrupts to enable. This is a logical OR of both
  *             enumeration :: enet_dma_interrupt_enable_t and enet_mac_interrupt_enable_t.
  */
 void ENET_EnableInterrupts(ENET_Type *base, uint32_t mask);
@@ -753,11 +772,11 @@ void ENET_EnableInterrupts(ENET_Type *base, uint32_t mask);
  * @endcode
  *
  * @param base  ENET peripheral base address.
- * @param mask  ENET interrupts to disables. This is a logical OR of both 
+ * @param mask  ENET interrupts to disables. This is a logical OR of both
  *             enumeration :: enet_dma_interrupt_enable_t and enet_mac_interrupt_enable_t.
  */
 void ENET_DisableInterrupts(ENET_Type *base, uint32_t mask);
-    
+
 /*!
  * @brief Gets the ENET DMA interrupt status flag.
  *
@@ -789,9 +808,9 @@ static inline void ENET_ClearDmaInterruptStatus(ENET_Type *base, uint8_t channel
  * @brief Gets the ENET MAC interrupt status flag.
  *
  * @param base  ENET peripheral base address.
- * @return The event status of the interrupt source. 
+ * @return The event status of the interrupt source.
  *       Use the enum in enet_mac_interrupt_enable_t and right shift
- *       ENET_MACINT_ENUM_OFFSET to mask the returned value to get the 
+ *       ENET_MACINT_ENUM_OFFSET to mask the returned value to get the
  *       exact interrupt status.
  */
 static inline uint32_t ENET_GetMacInterruptStatus(ENET_Type *base)
@@ -944,17 +963,17 @@ void ENET_UpdateRxDescriptor(
  */
 
 /*!
- * @brief Create ENET Handler 
+ * @brief Create ENET Handler
  *
  * This is a transactional API and it's provided to store all datas which are needed
  * during the whole transactional process. This API should not be used when you use
- * functional APIs to do data tx/rx. This is funtion will store many data/flag for 
+ * functional APIs to do data tx/rx. This is funtion will store many data/flag for
  * transactional use, so all configure API such as ENET_Init(), ENET_DescriptorInit(),
  * ENET_EnableInterrupts() etc.
  *
  * @note as our transactional transmit API use the zero-copy transmit buffer.
  * so there are two thing we emphasize here:
- *  1. tx buffer free/requeue for application should be done in the tx 
+ *  1. tx buffer free/requeue for application should be done in the tx
  *  interrupt handler. Please set callback: kENET_TxIntEvent with tx buffer free/requeue
  *  process APIs.
  *  2. the tx interrupt is forced to open.

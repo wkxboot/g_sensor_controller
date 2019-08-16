@@ -1,35 +1,9 @@
 /*
- * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- *  that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_spi_dma.h"
@@ -91,7 +65,7 @@ static void SPI_RxDMACallback(dma_handle_t *handle, void *userData, bool transfe
 #if defined(__ICCARM__)
 #pragma data_alignment = 4
 static spi_dma_txdummy_t s_txDummy[FSL_FEATURE_SOC_SPI_COUNT] = {0};
-#elif defined(__CC_ARM)
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
 __attribute__((aligned(4))) static spi_dma_txdummy_t s_txDummy[FSL_FEATURE_SOC_SPI_COUNT] = {0};
 #elif defined(__GNUC__)
 __attribute__((aligned(4))) static spi_dma_txdummy_t s_txDummy[FSL_FEATURE_SOC_SPI_COUNT] = {0};
@@ -101,7 +75,7 @@ __attribute__((aligned(4))) static spi_dma_txdummy_t s_txDummy[FSL_FEATURE_SOC_S
 #pragma data_alignment = 4
 static uint16_t s_rxDummy;
 static uint32_t s_txLastWord[FSL_FEATURE_SOC_SPI_COUNT];
-#elif defined(__CC_ARM)
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
 __attribute__((aligned(4))) static uint16_t s_rxDummy;
 __attribute__((aligned(4))) static uint32_t s_txLastWord[FSL_FEATURE_SOC_SPI_COUNT];
 #elif defined(__GNUC__)
@@ -112,7 +86,7 @@ __attribute__((aligned(4))) static uint32_t s_txLastWord[FSL_FEATURE_SOC_SPI_COU
 #if defined(__ICCARM__)
 #pragma data_alignment = 16
 static dma_descriptor_t s_spi_descriptor_table[FSL_FEATURE_SOC_SPI_COUNT] = {0};
-#elif defined(__CC_ARM)
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
 __attribute__((aligned(16))) static dma_descriptor_t s_spi_descriptor_table[FSL_FEATURE_SOC_SPI_COUNT] = {0};
 #elif defined(__GNUC__)
 __attribute__((aligned(16))) static dma_descriptor_t s_spi_descriptor_table[FSL_FEATURE_SOC_SPI_COUNT] = {0};
@@ -162,6 +136,19 @@ static void SPI_SetupDummy(SPI_Type *base, spi_dma_txdummy_t *dummy, spi_transfe
     dummy->word &= (uint32_t)(~kSPI_FrameAssert);
 }
 
+/*!
+ * brief Initialize the SPI master DMA handle.
+ *
+ * This function initializes the SPI master DMA handle which can be used for other SPI master transactional APIs.
+ * Usually, for a specified SPI instance, user need only call this API once to get the initialized handle.
+ *
+ * param base SPI peripheral base address.
+ * param handle SPI handle pointer.
+ * param callback User callback function called at the end of a transfer.
+ * param userData User data for callback.
+ * param txHandle DMA handle pointer for SPI Tx, the handle shall be static allocated by users.
+ * param rxHandle DMA handle pointer for SPI Rx, the handle shall be static allocated by users.
+ */
 status_t SPI_MasterTransferCreateHandleDMA(SPI_Type *base,
                                            spi_dma_handle_t *handle,
                                            spi_dma_callback_t callback,
@@ -207,6 +194,19 @@ status_t SPI_MasterTransferCreateHandleDMA(SPI_Type *base,
     return kStatus_Success;
 }
 
+/*!
+ * brief Perform a non-blocking SPI transfer using DMA.
+ *
+ * note This interface returned immediately after transfer initiates, users should call
+ * SPI_GetTransferStatus to poll the transfer status to check whether SPI transfer finished.
+ *
+ * param base SPI peripheral base address.
+ * param handle SPI DMA handle pointer.
+ * param xfer Pointer to dma transfer structure.
+ * retval kStatus_Success Successfully start a transfer.
+ * retval kStatus_InvalidArgument Input argument is invalid.
+ * retval kStatus_SPI_Busy SPI is not idle, is running another transfer.
+ */
 status_t SPI_MasterTransferDMA(SPI_Type *base, spi_dma_handle_t *handle, spi_transfer_t *xfer)
 {
     int32_t instance;
@@ -391,6 +391,19 @@ status_t SPI_MasterTransferDMA(SPI_Type *base, spi_dma_handle_t *handle, spi_tra
     return result;
 }
 
+/*!
+ * brief Transfers a block of data using a DMA method.
+ *
+ * This function using polling way to do the first half transimission and using DMA way to
+ * do the srcond half transimission, the transfer mechanism is half-duplex.
+ * When do the second half transimission, code will return right away. When all data is transferred,
+ * the callback function is called.
+ *
+ * param base SPI base pointer
+ * param handle A pointer to the spi_master_dma_handle_t structure which stores the transfer state.
+ * param transfer A pointer to the spi_half_duplex_transfer_t structure.
+ * return status of status_t.
+ */
 status_t SPI_MasterHalfDuplexTransferDMA(SPI_Type *base, spi_dma_handle_t *handle, spi_half_duplex_transfer_t *xfer)
 {
     assert(xfer);
@@ -485,6 +498,12 @@ static void SPI_TxDMACallback(dma_handle_t *handle, void *userData, bool transfe
     }
 }
 
+/*!
+ * brief Abort a SPI transfer using DMA.
+ *
+ * param base SPI peripheral base address.
+ * param handle SPI DMA handle pointer.
+ */
 void SPI_MasterTransferAbortDMA(SPI_Type *base, spi_dma_handle_t *handle)
 {
     assert(NULL != handle);
@@ -500,6 +519,16 @@ void SPI_MasterTransferAbortDMA(SPI_Type *base, spi_dma_handle_t *handle)
     handle->state = kSPI_Idle;
 }
 
+/*!
+ * brief Gets the master DMA transfer remaining bytes.
+ *
+ * This function gets the master DMA transfer remaining bytes.
+ *
+ * param base SPI peripheral base address.
+ * param handle A pointer to the spi_dma_handle_t structure which stores the transfer state.
+ * param count A number of bytes transferred by the non-blocking transaction.
+ * return status of status_t.
+ */
 status_t SPI_MasterTransferGetCountDMA(SPI_Type *base, spi_dma_handle_t *handle, size_t *count)
 {
     assert(handle);

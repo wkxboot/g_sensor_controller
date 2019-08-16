@@ -38,7 +38,8 @@
 #include "clock_config.h"
 #include "fsl_common.h"
 #include "fsl_gpio.h"
-
+#include "pin_mux.h"
+#include "fsl_wwdt.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -50,60 +51,52 @@ extern "C" {
 /*******************************************************************************
  * API
  ******************************************************************************/
-#define  DATA_STREAM_LED_GPIO    GPIO
-#define  DATA_STREAM_LED_PORT    1
-#define  DATA_STREAM_LED_PIN     12
- 
-#define  SYS_LED_GPIO            GPIO
-#define  SYS_LED_PORT            0
-#define  SYS_LED_PIN             7    
+#define  BSP_UNLOCK_SW_STATUS_PRESS_LEVEL   0
+#define  BSP_UNLOCK_SW_STATUS_RELEASE_LEVEL 1
 
-#define  LOCK_CTRL_GPIO          GPIO
-#define  LOCK_CTRL_PORT          0
-#define  LOCK_CTRL_PIN           31U
+#define  BSP_LOCK_UNLOCKED_LEVEL            0
+#define  BSP_LOCK_LOCKED_LEVEL              1
 
-#define  LOCK_SENSOR_GPIO        GPIO
-#define  LOCK_SENSOR_PORT        1
-#define  LOCK_SENSOR_PIN         6U
+#define  BSP_HOLE_OPEN_LEVEL                1
+#define  BSP_HOLE_CLOSE_LEVEL               0
 
-#define  LOCK_HOLE_SENSOR_GPIO   GPIO
-#define  LOCK_HOLE_SENSOR_PORT   0
-#define  LOCK_HOLE_SENSOR_PIN    8U
-  
-#define  DOOR_SENSOR_GPIO        GPIO
-#define  DOOR_SENSOR_PORT        1
-#define  DOOR_SENSOR_PIN         19U
+#define  BSP_DOOR_OPEN_LEVEL                1
+#define  BSP_DOOR_CLOSE_LEVEL               0
 
-#define  BSP_LOCK_OPEN_LEVEL          0
-#define  BSP_LOCK_CLOSE_LEVEL         1
 
-#define  BSP_LOCK_HOLE_OPEN_LEVEL     1
-#define  BSP_LOCK_HOLE_CLOSE_LEVEL    0
-#define  BSP_DOOR_OPEN_LEVEL          1
-#define  BSP_DOOR_CLOSE_LEVEL         0
-
-#define  BSP_LOCK_STATUS_OPEN         0x33
-#define  BSP_LOCK_STATUS_CLOSE        0x44
-
-#define  BSP_LOCK_HOLE_STATUS_OPEN    0x55
-#define  BSP_LOCK_HOLE_STATUS_CLOSE   0x66
    
-#define  BSP_DOOR_STATUS_OPEN         0x11
-#define  BSP_DOOR_STATUS_CLOSE        0x22
+#define  BSP_DOOR_STATUS_OPEN              0x11
+#define  BSP_DOOR_STATUS_CLOSE             0x22
   
-  
-  
-int bsp_board_init();
-void bsp_data_stream_led_toggle();
-void bsp_data_stream_led_on();
-void bsp_data_stream_led_off();
-void bsp_sys_led_toggle();
+#define  BSP_LOCK_STATUS_UNLOCKED          0x33
+#define  BSP_LOCK_STATUS_LOCKED            0x44
 
-void bsp_lock_ctrl_open();
-void bsp_lock_ctrl_close();
-uint8_t bsp_door_sensor_status();
-uint8_t bsp_lock_sensor_status();
-uint8_t bsp_lock_hole_sensor_status();
+#define  BSP_HOLE_STATUS_OPEN              0x55
+#define  BSP_HOLE_STATUS_CLOSE             0x66
+
+#define  BSP_UNLOCK_SW_STATUS_PRESS        0x77
+#define  BSP_UNLOCK_SW_STATUS_RELEASE      0x88
+
+  
+int bsp_board_init(void);
+/*开压缩机*/
+void bsp_compressor_ctrl_pwr_on(void);
+/*关压缩机*/
+void bsp_compressor_ctrl_pwr_off(void);
+/*开锁*/
+void bsp_lock_ctrl_open(void);
+/*关锁*/
+void bsp_lock_ctrl_close(void);
+/*门窗传感器状态*/
+uint8_t bsp_door_sensor_status(void);
+/*锁传感器状态*/
+uint8_t bsp_lock_sensor_status(void);
+/*锁空接近传感器状态*/
+uint8_t bsp_hole_sensor_status(void);
+/*手动开锁按键状态*/
+uint8_t bsp_unlock_sw_status();
+
+
 
 #if defined(__cplusplus)
 }

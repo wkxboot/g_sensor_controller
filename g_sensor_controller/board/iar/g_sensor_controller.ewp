@@ -66,7 +66,7 @@
                 </option>
                 <option>
                     <name>OGLastSavedByProductVersion</name>
-                    <state>8.30.2.18207</state>
+                    <state>8.32.4.20866</state>
                 </option>
                 <option>
                     <name>GeneralEnableMisra</name>
@@ -116,7 +116,7 @@
                 </option>
                 <option>
                     <name>GBECoreSlave</name>
-                    <version>26</version>
+                    <version>27</version>
                     <state>39</state>
                 </option>
                 <option>
@@ -133,7 +133,7 @@
                 </option>
                 <option>
                     <name>CoreVariant</name>
-                    <version>26</version>
+                    <version>27</version>
                     <state>39</state>
                 </option>
                 <option>
@@ -156,7 +156,7 @@
                 </option>
                 <option>
                     <name>GFPUCoreSlave2</name>
-                    <version>26</version>
+                    <version>27</version>
                     <state>39</state>
                 </option>
                 <option>
@@ -215,12 +215,12 @@
             <name>ICCARM</name>
             <archiveVersion>2</archiveVersion>
             <data>
-                <version>34</version>
+                <version>35</version>
                 <wantNonLocal>1</wantNonLocal>
                 <debug>1</debug>
                 <option>
                     <name>CCDefines</name>
-                    <state>CPU_LPC54606J256ET180
+                    <state>CPU_LPC54606J512BD100
 </state>
                 </option>
                 <option>
@@ -354,15 +354,16 @@
                     <state>$PROJ_DIR$/../../rtos/amazon-freertos/lib/FreeRTOS/portable/IAR/ARM_CM4F</state>
                     <state>$PROJ_DIR$/../../board/bsp</state>
                     <state>$PROJ_DIR$/../../board/user</state>
-                    <state>$PROJ_DIR$/../../board/user/serial</state>
                     <state>$PROJ_DIR$/../../board/user/peripheral</state>
                     <state>$PROJ_DIR$/../../board/user/tasks</state>
                     <state>$PROJ_DIR$/../../board/user/debug/cpu</state>
                     <state>$PROJ_DIR$/../../board/user/debug/log</state>
+                    <state>$PROJ_DIR$/../../board/user/lib/src</state>
                     <state>$PROJ_DIR$/../../board/user/debug/log/SEGGER_RTT_V612j/RTT</state>
                     <state>$PROJ_DIR$/../../board/user/rtos</state>
-                    <state>$PROJ_DIR$/../../board/user/circle_buffer</state>
-                    <state>$PROJ_DIR$/../../board/user/utils</state>
+                    <state>$PROJ_DIR$/../../board/user/flash_if</state>
+                    <state>$PROJ_DIR$/../../board/user/eeprom_if</state>
+                    <state>$PROJ_DIR$/../../board/user/device_env</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -383,7 +384,7 @@
                 <option>
                     <name>CCOptStrategy</name>
                     <version>0</version>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
@@ -450,7 +451,7 @@
                 <option>
                     <name>CCOptStrategySlave</name>
                     <version>0</version>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCGuardCalls</name>
@@ -479,6 +480,10 @@
                 <option>
                     <name>IccRTTI2</name>
                     <state>0</state>
+                </option>
+                <option>
+                    <name>OICompilerExtraOption</name>
+                    <state>1</state>
                 </option>
             </data>
         </settings>
@@ -700,7 +705,7 @@
             <name>ILINK</name>
             <archiveVersion>0</archiveVersion>
             <data>
-                <version>21</version>
+                <version>22</version>
                 <wantNonLocal>1</wantNonLocal>
                 <debug>1</debug>
                 <option>
@@ -781,7 +786,7 @@
                 </option>
                 <option>
                     <name>IlinkIcfFile</name>
-                    <state>$PROJ_DIR$/LPC5460xJ512.icf</state>
+                    <state>$PROJ_DIR$\g_sensor_controller.icf</state>
                 </option>
                 <option>
                     <name>IlinkIcfFileSlave</name>
@@ -829,7 +834,7 @@
                 </option>
                 <option>
                     <name>IlinkAdditionalLibs</name>
-                    <state>$PROJ_DIR$/../../device/LPC54606/power_lib/iar_lib_power.a</state>
+                    <state>$PROJ_DIR$/../../device/LPC54606/iar/iar_lib_power.a</state>
                 </option>
                 <option>
                     <name>IlinkOverrideProgramEntryLabel</name>
@@ -1016,6 +1021,10 @@
                     <name>IlinkTrustzoneImportLibraryOut</name>
                     <state>g_sensor_controller_import_lib.o</state>
                 </option>
+                <option>
+                    <name>OILinkExtraOption</name>
+                    <state>1</state>
+                </option>
             </data>
         </settings>
         <settings>
@@ -1076,11 +1085,11 @@
                 </option>
                 <option>
                     <name>Input description</name>
-                    <state></state>
+                    <state>Automatic choice of formatter, without multibyte support.</state>
                 </option>
                 <option>
                     <name>Output description</name>
-                    <state></state>
+                    <state>Automatic choice of formatter, without multibyte support.</state>
                 </option>
                 <option>
                     <name>GOutputBinary</name>
@@ -1102,7 +1111,7 @@
                 </option>
                 <option>
                     <name>RTDescription</name>
-                    <state></state>
+                    <state>Use the normal configuration of the C/C++ runtime library. No locale interface, C locale, no file descriptor support, no multibytes in printf and scanf, and no hex floats in strtod.</state>
                 </option>
                 <option>
                     <name>OGProductVersion</name>
@@ -1110,7 +1119,7 @@
                 </option>
                 <option>
                     <name>OGLastSavedByProductVersion</name>
-                    <state></state>
+                    <state>8.30.2.18207</state>
                 </option>
                 <option>
                     <name>GeneralEnableMisra</name>
@@ -1122,7 +1131,7 @@
                 </option>
                 <option>
                     <name>OGChipSelectEditMenu</name>
-                    <state></state>
+                    <state>Default	None</state>
                 </option>
                 <option>
                     <name>GenLowLevelInterface</name>
@@ -1156,11 +1165,11 @@
                 </option>
                 <option>
                     <name>RTConfigPath2</name>
-                    <state></state>
+                    <state>$TOOLKIT_DIR$\inc\c\DLib_Config_Normal.h</state>
                 </option>
                 <option>
                     <name>GBECoreSlave</name>
-                    <version>26</version>
+                    <version>27</version>
                     <state>38</state>
                 </option>
                 <option>
@@ -1177,12 +1186,12 @@
                 </option>
                 <option>
                     <name>CoreVariant</name>
-                    <version>26</version>
+                    <version>27</version>
                     <state>38</state>
                 </option>
                 <option>
                     <name>GFPUDeviceSlave</name>
-                    <state>-</state>
+                    <state>Default	None</state>
                 </option>
                 <option>
                     <name>FPU2</name>
@@ -1200,7 +1209,7 @@
                 </option>
                 <option>
                     <name>GFPUCoreSlave2</name>
-                    <version>26</version>
+                    <version>27</version>
                     <state>38</state>
                 </option>
                 <option>
@@ -1259,7 +1268,7 @@
             <name>ICCARM</name>
             <archiveVersion>2</archiveVersion>
             <data>
-                <version>34</version>
+                <version>35</version>
                 <wantNonLocal>1</wantNonLocal>
                 <debug>0</debug>
                 <option>
@@ -1373,7 +1382,7 @@
                 </option>
                 <option>
                     <name>OutputFile</name>
-                    <state></state>
+                    <state>$FILE_BNAME$.o</state>
                 </option>
                 <option>
                     <name>CCLibConfigHeader</name>
@@ -1414,7 +1423,7 @@
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
-                    <state>1</state>
+                    <state>3</state>
                 </option>
                 <option>
                     <name>CompilerMisraRules98</name>
@@ -1506,6 +1515,10 @@
                 <option>
                     <name>IccRTTI2</name>
                     <state>0</state>
+                </option>
+                <option>
+                    <name>OICompilerExtraOption</name>
+                    <state>1</state>
                 </option>
             </data>
         </settings>
@@ -1639,7 +1652,7 @@
                 </option>
                 <option>
                     <name>AOutputFile</name>
-                    <state></state>
+                    <state>$FILE_BNAME$.o</state>
                 </option>
                 <option>
                     <name>ALimitErrorsCheck</name>
@@ -1727,7 +1740,7 @@
             <name>ILINK</name>
             <archiveVersion>0</archiveVersion>
             <data>
-                <version>21</version>
+                <version>22</version>
                 <wantNonLocal>1</wantNonLocal>
                 <debug>0</debug>
                 <option>
@@ -1744,7 +1757,7 @@
                 </option>
                 <option>
                     <name>IlinkOutputFile</name>
-                    <state>###Unitialized###</state>
+                    <state>g_sensor_controller.out</state>
                 </option>
                 <option>
                     <name>IlinkDebugInfoEnable</name>
@@ -2043,6 +2056,10 @@
                     <name>IlinkTrustzoneImportLibraryOut</name>
                     <state>###Unitialized###</state>
                 </option>
+                <option>
+                    <name>OILinkExtraOption</name>
+                    <state>1</state>
+                </option>
             </data>
         </settings>
         <settings>
@@ -2089,12 +2106,6 @@
         <group>
             <name>user</name>
             <group>
-                <name>circle_buffer</name>
-                <file>
-                    <name>$PROJ_DIR$\..\user\circle_buffer\circle_buffer.c</name>
-                </file>
-            </group>
-            <group>
                 <name>debug</name>
                 <group>
                     <name>cpu</name>
@@ -2112,14 +2123,65 @@
                         <file>
                             <name>$PROJ_DIR$\..\user\debug\log\SEGGER_RTT_V612j\RTT\SEGGER_RTT_printf.c</name>
                         </file>
+                    </group>
+                    <group>
+                        <name>uart_console</name>
                         <file>
-                            <name>$PROJ_DIR$\..\user\debug\log\SEGGER_RTT_V612j\Syscalls\SEGGER_RTT_Syscalls_IAR.c</name>
+                            <name>$PROJ_DIR$\..\user\debug\log\uart_console\uart_console.c</name>
                         </file>
                     </group>
                     <file>
                         <name>$PROJ_DIR$\..\user\debug\log\log.c</name>
                     </file>
                 </group>
+            </group>
+            <group>
+                <name>device_env</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\device_env\device_env.c</name>
+                </file>
+            </group>
+            <group>
+                <name>eeprom_if</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\eeprom_if\eeprom_if.c</name>
+                </file>
+            </group>
+            <group>
+                <name>flash_if</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\flash_if\flash_if.c</name>
+                </file>
+            </group>
+            <group>
+                <name>lib</name>
+                <file>
+                    <name>$PROJ_DIR$\..\user\lib\src\circle_buffer.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\lib\src\crc16.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\lib\src\fymodem.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\lib\src\md5.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\lib\src\nxp_cm4_uart_hal_driver.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\lib\src\printf.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\lib\src\xstring.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\lib\src\xtimer.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\lib\src\xuart.c</name>
+                </file>
             </group>
             <group>
                 <name>rtos</name>
@@ -2134,24 +2196,21 @@
                 </file>
             </group>
             <group>
-                <name>serial</name>
-                <file>
-                    <name>$PROJ_DIR$\..\user\serial\serial.c</name>
-                </file>
-            </group>
-            <group>
-                <name>serial_uart_hal</name>
-                <file>
-                    <name>$PROJ_DIR$\..\user\serial_uart_hal\nxp_serial_uart_hal_driver.c</name>
-                </file>
-            </group>
-            <group>
                 <name>tasks</name>
                 <file>
-                    <name>$PROJ_DIR$\..\user\tasks\controller_task.c</name>
+                    <name>$PROJ_DIR$\..\user\tasks\adc_task.c</name>
                 </file>
                 <file>
-                    <name>$PROJ_DIR$\..\user\tasks\cpu_task.c</name>
+                    <name>$PROJ_DIR$\..\user\tasks\communication_task.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\tasks\compressor_task.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\tasks\debug_task.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\tasks\lock_task.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\user\tasks\scale_task.c</name>
@@ -2159,11 +2218,11 @@
                 <file>
                     <name>$PROJ_DIR$\..\user\tasks\tasks_init.c</name>
                 </file>
-            </group>
-            <group>
-                <name>utils</name>
                 <file>
-                    <name>$PROJ_DIR$\..\user\utils\utils.c</name>
+                    <name>$PROJ_DIR$\..\user\tasks\temperature_task.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\user\tasks\watch_dog_task.c</name>
                 </file>
             </group>
         </group>
@@ -2230,9 +2289,6 @@
                 <name>$PROJ_DIR$\..\..\device\LPC54606\drivers\fsl_i2c_dma.c</name>
             </file>
             <file>
-                <name>$PROJ_DIR$\..\..\device\LPC54606\drivers\fsl_i2c_freertos.c</name>
-            </file>
-            <file>
                 <name>$PROJ_DIR$\..\..\device\LPC54606\drivers\fsl_i2s.c</name>
             </file>
             <file>
@@ -2275,9 +2331,6 @@
                 <name>$PROJ_DIR$\..\..\device\LPC54606\drivers\fsl_spi_dma.c</name>
             </file>
             <file>
-                <name>$PROJ_DIR$\..\..\device\LPC54606\drivers\fsl_spi_freertos.c</name>
-            </file>
-            <file>
                 <name>$PROJ_DIR$\..\..\device\LPC54606\drivers\fsl_spifi.c</name>
             </file>
             <file>
@@ -2288,9 +2341,6 @@
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\device\LPC54606\drivers\fsl_usart_dma.c</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\..\..\device\LPC54606\drivers\fsl_usart_freertos.c</name>
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\device\LPC54606\drivers\fsl_utick.c</name>

@@ -1,35 +1,9 @@
 /*
- * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- *  that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_dma.h"
@@ -42,7 +16,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.lpc_dma"
 #endif
-
 
 /*******************************************************************************
  * Prototypes
@@ -84,12 +57,12 @@ static dma_handle_t *s_DMAHandle[FSL_FEATURE_DMA_ALL_CHANNELS];
 #if defined(__ICCARM__)
 #pragma data_alignment = FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE
 static dma_descriptor_t s_dma_descriptor_table[FSL_FEATURE_SOC_DMA_COUNT][FSL_FEATURE_DMA_MAX_CHANNELS] = {0};
-#elif defined(__CC_ARM)
-__attribute__((aligned(FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE)))
-static dma_descriptor_t s_dma_descriptor_table[FSL_FEATURE_SOC_DMA_COUNT][FSL_FEATURE_DMA_MAX_CHANNELS] = {0};
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
+__attribute__((aligned(FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE))) static dma_descriptor_t
+    s_dma_descriptor_table[FSL_FEATURE_SOC_DMA_COUNT][FSL_FEATURE_DMA_MAX_CHANNELS] = {0};
 #elif defined(__GNUC__)
-__attribute__((aligned(FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE)))
-static dma_descriptor_t s_dma_descriptor_table[FSL_FEATURE_SOC_DMA_COUNT][FSL_FEATURE_DMA_MAX_CHANNELS] = {0};
+__attribute__((aligned(FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE))) static dma_descriptor_t
+    s_dma_descriptor_table[FSL_FEATURE_SOC_DMA_COUNT][FSL_FEATURE_DMA_MAX_CHANNELS] = {0};
 #endif
 
 /*******************************************************************************
@@ -128,18 +101,34 @@ static uint32_t DMA_GetVirtualStartChannel(DMA_Type *base)
     return startChannel;
 }
 
+/*!
+ * brief Initializes DMA peripheral.
+ *
+ * This function enable the DMA clock, set descriptor table and
+ * enable DMA peripheral.
+ *
+ * param base DMA peripheral base address.
+ */
 void DMA_Init(DMA_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* enable dma clock gate */
     CLOCK_EnableClock(s_dmaClockName[DMA_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
     /* set descriptor table */
     base->SRAMBASE = (uint32_t)s_dma_descriptor_table;
     /* enable dma peripheral */
     base->CTRL |= DMA_CTRL_ENABLE_MASK;
 }
 
+/*!
+ * brief Deinitializes DMA peripheral.
+ *
+ * This function gates the DMA clock.
+ *
+ * param base DMA peripheral base address.
+ */
 void DMA_Deinit(DMA_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -149,6 +138,13 @@ void DMA_Deinit(DMA_Type *base)
     base->CTRL &= ~(DMA_CTRL_ENABLE_MASK);
 }
 
+/*!
+ * brief Set trigger settings of DMA channel.
+ *
+ * param base DMA peripheral base address.
+ * param channel DMA channel number.
+ * param trigger trigger configuration.
+ */
 void DMA_ConfigureChannelTrigger(DMA_Type *base, uint32_t channel, dma_channel_trigger_t *trigger)
 {
     assert((channel < FSL_FEATURE_DMA_NUMBER_OF_CHANNELSn(base)) && (NULL != trigger));
@@ -167,6 +163,13 @@ void DMA_ConfigureChannelTrigger(DMA_Type *base, uint32_t channel, dma_channel_t
  * @param base DMA peripheral base address.
  * @param channel DMA channel number.
  * @return The number of bytes which have not been transferred yet.
+ */
+/*!
+ * brief Gets the remaining bytes of the current DMA descriptor transfer.
+ *
+ * param base DMA peripheral base address.
+ * param channel DMA channel number.
+ * return The number of bytes which have not been transferred yet.
  */
 uint32_t DMA_GetRemainingBytes(DMA_Type *base, uint32_t channel)
 {
@@ -243,6 +246,16 @@ static void DMA_SetupXferCFG(dma_xfercfg_t *xfercfg, uint32_t *xfercfg_addr)
     *xfercfg_addr = xfer;
 }
 
+/*!
+ * brief Create application specific DMA descriptor
+ *        to be used in a chain in transfer
+ *
+ * param desc DMA descriptor address.
+ * param xfercfg Transfer configuration for DMA descriptor.
+ * param srcAddr Address of last item to transmit
+ * param dstAddr Address of last item to receive.
+ * param nextDesc Address of next descriptor in chain.
+ */
 void DMA_CreateDescriptor(dma_descriptor_t *desc, dma_xfercfg_t *xfercfg, void *srcAddr, void *dstAddr, void *nextDesc)
 {
     uint32_t xfercfg_reg = 0;
@@ -261,6 +274,13 @@ void DMA_CreateDescriptor(dma_descriptor_t *desc, dma_xfercfg_t *xfercfg, void *
         (uint8_t *)dstAddr + (xfercfg->dstInc * xfercfg->byteWidth * (xfercfg->transferCount - 1)), nextDesc);
 }
 
+/*!
+ * brief Abort running transfer by handle.
+ *
+ * This function aborts DMA transfer specified by handle.
+ *
+ * param handle DMA handle pointer.
+ */
 void DMA_AbortTransfer(dma_handle_t *handle)
 {
     assert(NULL != handle);
@@ -273,6 +293,17 @@ void DMA_AbortTransfer(dma_handle_t *handle)
     DMA_EnableChannel(handle->base, handle->channel);
 }
 
+/*!
+ * brief Creates the DMA handle.
+ *
+ * This function is called if using transaction API for DMA. This function
+ * initializes the internal state of DMA handle.
+ *
+ * param handle DMA handle pointer. The DMA handle stores callback function and
+ *               parameters.
+ * param base DMA peripheral base address.
+ * param channel DMA channel number.
+ */
 void DMA_CreateHandle(dma_handle_t *handle, DMA_Type *base, uint32_t channel)
 {
     assert((NULL != handle) && (channel < FSL_FEATURE_DMA_NUMBER_OF_CHANNELSn(base)));
@@ -291,6 +322,16 @@ void DMA_CreateHandle(dma_handle_t *handle, DMA_Type *base, uint32_t channel)
     EnableIRQ(s_dmaIRQNumber[dmaInstance]);
 }
 
+/*!
+ * brief Installs a callback function for the DMA transfer.
+ *
+ * This callback is called in DMA IRQ handler. Use the callback to do something after
+ * the current major loop transfer completes.
+ *
+ * param handle DMA handle pointer.
+ * param callback DMA callback function pointer.
+ * param userData Parameter for callback function.
+ */
 void DMA_SetCallback(dma_handle_t *handle, dma_callback callback, void *userData)
 {
     assert(handle != NULL);
@@ -299,6 +340,22 @@ void DMA_SetCallback(dma_handle_t *handle, dma_callback callback, void *userData
     handle->userData = userData;
 }
 
+/*!
+ * brief Prepares the DMA transfer structure.
+ *
+ * This function prepares the transfer configuration structure according to the user input.
+ *
+ * param config The user configuration structure of type dma_transfer_t.
+ * param srcAddr DMA transfer source address.
+ * param dstAddr DMA transfer destination address.
+ * param byteWidth DMA transfer destination address width(bytes).
+ * param transferBytes DMA transfer bytes to be transferred.
+ * param type DMA transfer type.
+ * param nextDesc Chain custom descriptor to transfer.
+ * note The data address and the data width must be consistent. For example, if the SRC
+ *       is 4 bytes, so the source address must be 4 bytes aligned, or it shall result in
+ *       source address error(SAE).
+ */
 void DMA_PrepareTransfer(dma_transfer_config_t *config,
                          void *srcAddr,
                          void *dstAddr,
@@ -354,6 +411,19 @@ void DMA_PrepareTransfer(dma_transfer_config_t *config,
     config->xfercfg.valid = true;
 }
 
+/*!
+ * brief Submits the DMA transfer request.
+ *
+ * This function submits the DMA transfer request according to the transfer configuration structure.
+ * If the user submits the transfer request repeatedly, this function packs an unprocessed request as
+ * a TCD and enables scatter/gather feature to process it in the next time.
+ *
+ * param handle DMA handle pointer.
+ * param config Pointer to DMA transfer configuration structure.
+ * retval kStatus_DMA_Success It means submit transfer request succeed.
+ * retval kStatus_DMA_QueueFull It means TCD queue is full. Submit transfer request is not allowed.
+ * retval kStatus_DMA_Busy It means the given channel is busy, need to submit request later.
+ */
 status_t DMA_SubmitTransfer(dma_handle_t *handle, dma_transfer_config_t *config)
 {
     assert((NULL != handle) && (NULL != config));
@@ -381,6 +451,14 @@ status_t DMA_SubmitTransfer(dma_handle_t *handle, dma_transfer_config_t *config)
     return kStatus_Success;
 }
 
+/*!
+ * brief DMA start transfer.
+ *
+ * This function enables the channel request. User can call this function after submitting the transfer request
+ * or before submitting the transfer request.
+ *
+ * param handle DMA handle pointer.
+ */
 void DMA_StartTransfer(dma_handle_t *handle)
 {
     assert(NULL != handle);

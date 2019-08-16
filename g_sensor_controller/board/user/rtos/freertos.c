@@ -68,7 +68,7 @@ __weak void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTask
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
   log_error("task:%s stack overflow.\r\n",pcTaskName);
-  log_assert(0);
+  log_assert_bool_false(0);
 }
 
 
@@ -85,7 +85,7 @@ __weak void vApplicationMallocFailedHook(void)
    FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
    to query the size of free heap space that remains (although it does not
    provide information on how the remaining heap might be fragmented). */
-   log_assert(0);
+   log_assert_bool_false(0);
 }
 
 

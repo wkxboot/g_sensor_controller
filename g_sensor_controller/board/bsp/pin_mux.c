@@ -56,12 +56,12 @@ BOARD_InitPins:
   - {pin_num: '5', peripheral: FLEXCOMM8, signal: TXD_SCL_MISO, pin_signal: PIO1_18/FC8_TXD_SCL_MISO/SCT0_OUT5/CAN1_RD/EMC_BLSN(1)}
   - {pin_num: '24', peripheral: SWD, signal: SWCLK, pin_signal: PIO0_11/FC6_RXD_SDA_MOSI_DATA/CTIMER2_MAT2/FREQME_GPIO_CLK_A/SWCLK/ADC0_1}
   - {pin_num: '25', peripheral: SWD, signal: SWDIO, pin_signal: PIO0_12/FC3_TXD_SCL_MISO/FREQME_GPIO_CLK_B/SCT0_GPI7/SWDIO/ADC0_2}
-  - {pin_num: '26', peripheral: ADC0, signal: 'CH, 3', pin_signal: PIO0_15/FC6_CTS_SDA_SSEL0/UTICK_CAP2/CTIMER4_CAP0/SCT0_OUT2/EMC_WEN/ENET_TX_EN/ADC0_3}
-  - {pin_num: '28', peripheral: ADC0, signal: 'CH, 5', pin_signal: PIO0_31/FC0_CTS_SDA_SSEL0/SD_D(2)/CTIMER0_MAT1/SCT0_OUT3/TRACEDATA(0)/ADC0_5}
+  - {pin_num: '26', peripheral: ADC0, signal: 'CH, 3', pin_signal: PIO0_15/FC6_CTS_SDA_SSEL0/UTICK_CAP2/CTIMER4_CAP0/SCT0_OUT2/EMC_WEN/ENET_TX_EN/ADC0_3, mode: pullDown}
+  - {pin_num: '28', peripheral: ADC0, signal: 'CH, 5', pin_signal: PIO0_31/FC0_CTS_SDA_SSEL0/SD_D(2)/CTIMER0_MAT1/SCT0_OUT3/TRACEDATA(0)/ADC0_5, mode: pullDown}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
-
+#include "fsl_gpio.h"
 /* FUNCTION ************************************************************************************************************
  *
  * Function Name : BOARD_InitPins
@@ -73,7 +73,148 @@ void BOARD_InitPins(void)
 {
     /* Enables the clock for the IOCON block. 0 = Disable; 1 = Enable.: 0x01u */
     CLOCK_EnableClock(kCLOCK_Iocon);
+    
+    /* Enables the clock for the GPIO0 module */
+    CLOCK_EnableClock(kCLOCK_Gpio0);
+    /* Enables the clock for the GPIO1 module */
+    CLOCK_EnableClock(kCLOCK_Gpio1);
+    
+    /*IO 配置开始*/
+   IOCON->PIO[0][23] = ((IOCON->PIO[0][23] &
+                          /* Mask bits to zero which are setting */
+                          (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK | IOCON_PIO_OD_MASK)))
 
+                         /* Selects pin function.
+                          * : PORT023 (pin 35) is configured as PIO0_23. */
+                         | IOCON_PIO_FUNC(PIO023_FUNC_ALT0)
+
+                         /* Selects function mode (on-chip pull-up/pull-down resistor control).
+                          * : Pull-up.
+                          * Pull-up resistor enabled. */
+                         | IOCON_PIO_MODE(PIO023_MODE_PULL_UP)
+
+                         /* Select Analog/Digital mode.
+                          * : Digital mode. */
+                         | IOCON_PIO_DIGIMODE(PIO023_DIGIMODE_DIGITAL)
+
+                         /* Controls open-drain mode.
+                          * : Normal.
+                          * Normal push-pull output. */
+                         | IOCON_PIO_OD(PIO023_OD_NORMAL));
+
+    IOCON->PIO[0][4] = ((IOCON->PIO[0][4] &
+                         /* Mask bits to zero which are setting */
+                         (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK | IOCON_PIO_OD_MASK)))
+
+                        /* Selects pin function.
+                         * : PORT04 (pin 87) is configured as PIO0_4. */
+                        | IOCON_PIO_FUNC(PIO04_FUNC_ALT0)
+
+                        /* Selects function mode (on-chip pull-up/pull-down resistor control).
+                         * : Pull-up.
+                         * Pull-up resistor enabled. */
+                        | IOCON_PIO_MODE(PIO04_MODE_PULL_UP)
+
+                        /* Select Analog/Digital mode.
+                         * : Digital mode. */
+                        | IOCON_PIO_DIGIMODE(PIO04_DIGIMODE_DIGITAL)
+
+                        /* Controls open-drain mode.
+                         * : Normal.
+                         * Normal push-pull output. */
+                        | IOCON_PIO_OD(PIO04_OD_NORMAL));
+
+    IOCON->PIO[1][1] = ((IOCON->PIO[1][1] &
+                         /* Mask bits to zero which are setting */
+                         (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK | IOCON_PIO_OD_MASK)))
+
+                        /* Selects pin function.
+                         * : PORT11 (pin 55) is configured as PIO1_1. */
+                        | IOCON_PIO_FUNC(PIO11_FUNC_ALT0)
+
+                        /* Selects function mode (on-chip pull-up/pull-down resistor control).
+                         * : Pull-up.
+                         * Pull-up resistor enabled. */
+                        | IOCON_PIO_MODE(PIO11_MODE_PULL_UP)
+
+                        /* Select Analog/Digital mode.
+                         * : Digital mode. */
+                        | IOCON_PIO_DIGIMODE(PIO11_DIGIMODE_DIGITAL)
+
+                        /* Controls open-drain mode.
+                         * : Normal.
+                         * Normal push-pull output. */
+                        | IOCON_PIO_OD(PIO11_OD_NORMAL));
+
+    IOCON->PIO[1][19] = ((IOCON->PIO[1][19] &
+                          /* Mask bits to zero which are setting */
+                          (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK | IOCON_PIO_OD_MASK)))
+
+                         /* Selects pin function.
+                          * : PORT119 (pin 16) is configured as PIO1_19. */
+                         | IOCON_PIO_FUNC(PIO119_FUNC_ALT0)
+
+                         /* Selects function mode (on-chip pull-up/pull-down resistor control).
+                          * : Pull-up.
+                          * Pull-up resistor enabled. */
+                         | IOCON_PIO_MODE(PIO119_MODE_PULL_UP)
+
+                         /* Select Analog/Digital mode.
+                          * : Digital mode. */
+                         | IOCON_PIO_DIGIMODE(PIO119_DIGIMODE_DIGITAL)
+
+                         /* Controls open-drain mode.
+                          * : Normal.
+                          * Normal push-pull output. */
+                         | IOCON_PIO_OD(PIO119_OD_NORMAL));
+
+    IOCON->PIO[1][20] = ((IOCON->PIO[1][20] &
+                          /* Mask bits to zero which are setting */
+                          (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK | IOCON_PIO_OD_MASK)))
+
+                         /* Selects pin function.
+                          * : PORT120 (pin 17) is configured as PIO1_20. */
+                         | IOCON_PIO_FUNC(PIO120_FUNC_ALT0)
+
+                         /* Selects function mode (on-chip pull-up/pull-down resistor control).
+                          * : Pull-up.
+                          * Pull-up resistor enabled. */
+                         | IOCON_PIO_MODE(PIO120_MODE_PULL_UP)
+
+                         /* Select Analog/Digital mode.
+                          * : Digital mode. */
+                         | IOCON_PIO_DIGIMODE(PIO120_DIGIMODE_DIGITAL)
+
+                         /* Controls open-drain mode.
+                          * : Normal.
+                          * Normal push-pull output. */
+                         | IOCON_PIO_OD(PIO120_OD_NORMAL));
+
+    IOCON->PIO[1][7] = ((IOCON->PIO[1][7] &
+                         /* Mask bits to zero which are setting */
+                         (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK | IOCON_PIO_OD_MASK)))
+
+                        /* Selects pin function.
+                         * : PORT17 (pin 18) is configured as PIO1_7. */
+                        | IOCON_PIO_FUNC(PIO17_FUNC_ALT0)
+
+                        /* Selects function mode (on-chip pull-up/pull-down resistor control).
+                         * : Pull-up.
+                         * Pull-up resistor enabled. */
+                        | IOCON_PIO_MODE(PIO17_MODE_PULL_UP)
+
+                        /* Select Analog/Digital mode.
+                         * : Digital mode. */
+                        | IOCON_PIO_DIGIMODE(PIO17_DIGIMODE_DIGITAL)
+
+                        /* Controls open-drain mode.
+                         * : Normal.
+                         * Normal push-pull output. */
+                        | IOCON_PIO_OD(PIO17_OD_NORMAL));
+    
+    /*IO 配置结束*/
+    
+    /*外设配置开始*/
     IOCON->PIO[0][10] = ((IOCON->PIO[0][10] &
                           /* Mask bits to zero which are setting */
                           (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_DIGIMODE_MASK)))
@@ -112,11 +253,16 @@ void BOARD_InitPins(void)
 
     IOCON->PIO[0][15] = ((IOCON->PIO[0][15] &
                           /* Mask bits to zero which are setting */
-                          (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_DIGIMODE_MASK)))
+                          (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK)))
 
                          /* Selects pin function.
                           * : PORT015 (pin 26) is configured as ADC0_3. */
                          | IOCON_PIO_FUNC(PIO015_FUNC_ALT0)
+
+                         /* Selects function mode (on-chip pull-up/pull-down resistor control).
+                          * : Pull-down.
+                          * Pull-down resistor enabled. */
+                         | IOCON_PIO_MODE(PIO015_MODE_PULL_DOWN)
 
                          /* Select Analog/Digital mode.
                           * : Analog mode. */
@@ -172,11 +318,16 @@ void BOARD_InitPins(void)
 
     IOCON->PIO[0][31] = ((IOCON->PIO[0][31] &
                           /* Mask bits to zero which are setting */
-                          (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_DIGIMODE_MASK)))
+                          (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK)))
 
                          /* Selects pin function.
                           * : PORT031 (pin 28) is configured as ADC0_5. */
                          | IOCON_PIO_FUNC(PIO031_FUNC_ALT0)
+
+                         /* Selects function mode (on-chip pull-up/pull-down resistor control).
+                          * : Pull-down.
+                          * Pull-down resistor enabled. */
+                         | IOCON_PIO_MODE(PIO031_MODE_PULL_DOWN)
 
                          /* Select Analog/Digital mode.
                           * : Analog mode. */
@@ -337,6 +488,7 @@ void BOARD_InitPins(void)
                         /* Select Analog/Digital mode.
                          * : Digital mode. */
                         | IOCON_PIO_DIGIMODE(PIO16_DIGIMODE_DIGITAL));
+    /*外设配置结束*/
 }
 /***********************************************************************************************************************
  * EOF

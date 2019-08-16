@@ -1,37 +1,10 @@
 /*
- * The Clear BSD License
- * Copyright (c) 2016, Freescale Semiconductor, Inc.
+ * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- *  that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
-
 #include "fsl_eeprom.h"
 
 /*******************************************************************************
@@ -42,7 +15,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.eeprom"
 #endif
-
 
 /*******************************************************************************
  * Prototypes
@@ -89,8 +61,16 @@ static uint32_t EEPROM_GetInstance(EEPROM_Type *base)
     return instance;
 }
 
+/*!
+ * brief Get EEPROM default configure settings.
+ *
+ * param config  EEPROM config structure pointer.
+ */
 void EEPROM_GetDefaultConfig(eeprom_config_t *config)
 {
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
+
     config->autoProgram = kEEPROM_AutoProgramWriteWord;
     config->writeWaitPhase1 = 0x5U;
     config->writeWaitPhase2 = 0x9U;
@@ -100,6 +80,28 @@ void EEPROM_GetDefaultConfig(eeprom_config_t *config)
     config->lockTimingParam = false;
 }
 
+static void EEPROM_Flush(EEPROM_Type *base)
+{
+    /* Write all prepared words */
+    EEPROM_ClearInterruptFlag(base, kEEPROM_ProgramFinishInterruptEnable);
+    base->CMD = FSL_FEATURE_EEPROM_PROGRAM_CMD;
+
+    /* Waiting for operation finished */
+    while ((EEPROM_GetInterruptStatus(base) & kEEPROM_ProgramFinishInterruptEnable) == 0U)
+    {
+    }
+}
+
+/*!
+ * brief Initializes the EEPROM with the user configuration structure.
+ *
+ * This function configures the EEPROM module with the user-defined configuration. This function also sets the
+ * internal clock frequency to about 155kHz according to the source clock frequency.
+ *
+ * param base     EEPROM peripheral base address.
+ * param config   The pointer to the configuration structure.
+ * param sourceClock_Hz EEPROM source clock frequency in Hz.
+ */
 void EEPROM_Init(EEPROM_Type *base, const eeprom_config_t *config, uint32_t sourceClock_Hz)
 {
     assert(config);
@@ -110,6 +112,22 @@ void EEPROM_Init(EEPROM_Type *base, const eeprom_config_t *config, uint32_t sour
     /* Enable the SAI clock */
     CLOCK_EnableClock(s_eepromClock[EEPROM_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#if !(defined(FSL_FEATURE_EEPROM_HAS_NO_RESET) && FSL_FEATURE_EEPROM_HAS_NO_RESET)
+    /* Reset the EEPROM module */
+    RESET_PeripheralReset(kEEPROM_RST_SHIFT_RSTn);
+#endif /* FSL_FEATURE_EEPROM_HAS_NO_RESET */
+
+#if (defined(FSL_SDK_ENABLE_DRIVER_POWER_CONTROL) && (FSL_SDK_ENABLE_DRIVER_POWER_CONTROL))
+    POWER_DisablePD(kPDRUNCFG_PD_EEPROM);
+
+    /* Delay larger than 100us. */
+    uint32_t count = SystemCoreClock / 1000;
+    while (count--)
+    {
+        __NOP();
+    }
+#endif /* FSL_SDK_ENABLE_DRIVER_POWER_CONTROL */
 
     /* Set the clock divider */
     clockDiv = sourceClock_Hz / FSL_FEATURE_EEPROM_INTERNAL_FREQ;
@@ -129,13 +147,19 @@ void EEPROM_Init(EEPROM_Type *base, const eeprom_config_t *config, uint32_t sour
                    EEPROM_WSTATE_PHASE2(config->writeWaitPhase2 - 1U) |
                    EEPROM_WSTATE_PHASE3(config->writeWaitPhase3 - 1U);
     base->WSTATE |= EEPROM_WSTATE_LCK_PARWEP(config->lockTimingParam);
- 
+
     /* Clear the remaining write operation  */
     base->CMD = FSL_FEATURE_EEPROM_PROGRAM_CMD;
     while ((EEPROM_GetInterruptStatus(base) & kEEPROM_ProgramFinishInterruptEnable) == 0U)
-    {}
+    {
+    }
 }
 
+/*!
+ * brief Deinitializes the EEPROM regions.
+ *
+ * param base     EEPROM peripheral base address.
+ */
 void EEPROM_Deinit(EEPROM_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -144,6 +168,15 @@ void EEPROM_Deinit(EEPROM_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Write a word data in address of EEPROM.
+ *
+ * Users can write a page or at least a word data into EEPROM address.
+ *
+ * param base     EEPROM peripheral base address.
+ * param offset   Offset from the begining address of EEPROM. This value shall be 4-byte aligned.
+ * param data     Data need be write.
+ */
 status_t EEPROM_WriteWord(EEPROM_Type *base, uint32_t offset, uint32_t data)
 {
     uint32_t *addr = NULL;
@@ -173,11 +206,171 @@ status_t EEPROM_WriteWord(EEPROM_Type *base, uint32_t offset, uint32_t data)
 
     /* Waiting for operation finished */
     while ((EEPROM_GetInterruptStatus(base) & kEEPROM_ProgramFinishInterruptEnable) == 0U)
-    {}
+    {
+    }
 
     return kStatus_Success;
 }
 
+/*!
+ * brief Write data from a user allocated buffer in address of EEPROM.
+ *
+ * Users can write any bytes data into EEPROM address by wBuf.
+ *
+ * param base     EEPROM peripheral base address.
+ * param offset   Offset from the begining address of EEPROM.
+ * param wBuf     Data need be write.
+ * param size     Number of bytes to write.
+ */
+void EEPROM_Write(EEPROM_Type *base, int offset, void *wBuf, int size)
+{
+    uint8_t *src;
+    bool unalignedStart;
+    uint32_t memUnit = 0;
+    uint32_t alignSize = 0;
+
+#if (defined(FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED) && FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED)
+    uint16_t *dst;
+    alignSize = 2;
+    memUnit = FSL_FEATURE_EEPROM_ROW_SIZE;
+#else
+    uint8_t i = 0;
+    uint32_t *dst;
+    uint32_t data32_Align = 0;
+    alignSize = 4;
+    memUnit = FSL_FEATURE_EEPROM_SIZE / FSL_FEATURE_EEPROM_PAGE_COUNT;
+#endif /* FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED */
+
+    /* Offset and size must be positive */
+    assert(offset >= 0);
+    assert(size > 0);
+    /* All bytes must be written to a valid EEPROM address */
+    assert((offset + size) <= FSL_FEATURE_EEPROM_SIZE);
+
+    src = wBuf;
+
+#if (defined(FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED) && FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED)
+    dst = &((uint16_t *)FSL_FEATURE_EEPROM_BASE_ADDRESS)[offset / alignSize];
+    unalignedStart = (offset % alignSize != 0);
+#else
+    dst = &((uint32_t *)FSL_FEATURE_EEPROM_BASE_ADDRESS)[offset / alignSize];
+    unalignedStart = (offset % alignSize != 0);
+#endif /* FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED */
+
+    while (size > 0)
+    {
+        /* If first byte is to be copied to non aligned EEPROM byte */
+        if (unalignedStart)
+        {
+/* The first byte from the buffer is not 16-bits aligned.
+ * Read the LSB from EEPROM to complete it.
+ */
+#if (defined(FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED) && FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED)
+            *dst = (uint16_t)(((uint16_t)src[0] << 8) | (*dst & 0x00ff));
+#else
+            /* The first byte from the buffer is not 32-bits aligned.
+             * Read the rest of data after position offset and realign them.
+             */
+            for (i = 0; i < alignSize; i++)
+            {
+                data32_Align |= (uint32_t)(((uint32_t)(src[i] << (8 * ((offset % alignSize) + i)))));
+            }
+            *dst = (*dst & (0xffffffff >> (8 * (alignSize - (offset % alignSize))))) | data32_Align;
+#endif                                                 /* FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED */
+            src += (alignSize - (offset % alignSize)); /* Operate src to let wBuf pointer offset correct*/
+            size -= (alignSize - (offset % alignSize));
+            unalignedStart = false;
+        }
+        else if (size >= alignSize)
+        {
+#if (defined(FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED) && FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED)
+            /* Combine two bytes from the buffer to a 16-bits word */
+            *dst = (uint16_t)(((uint16_t)src[1] << 8) | src[0]);
+#else
+            /* Combine four bytes from the buffer to a 32-bits word */
+            *dst = (uint32_t)(((uint32_t)(src[3] << 24 | src[2] << 16 | src[1] << 8) | src[0]));
+#endif                        /* FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED */
+            src += alignSize; /* Normal operate src to offset wBuf pointer by 4 bytes*/
+            size -= alignSize;
+        }
+        else
+        {
+/* The last several bytes from the buffer is not 32-bit aligned.
+ * Read the rest of bytes of non 32-bit aligned data
+ * and realign them by 32-bit aligned */
+#if (defined(FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED) && FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED)
+            *dst = (uint16_t)((*dst & 0xff00) | src[0]);
+#else
+            data32_Align = 0; /* Clear data32_Align */
+            for (i = 0; i < (size % alignSize); i++)
+            {
+                data32_Align |= (uint32_t)(((uint32_t)(src[i] << (8 * i))));
+            }
+            *dst = (*dst & (0xffffffff << (8 * (size % alignSize)))) | data32_Align;
+#endif /* FSL_FEATURE_EEPROM_TWOBYTES_ALIGNED */
+            size -= (size % alignSize);
+        }
+
+        dst++; /* EEPROM mempory pointer go ahead */
+
+        /* When memory unit size reached, have to flush. */
+        if ((((uint32_t)dst % memUnit) == 0) && size > 0)
+        {
+            EEPROM_Flush(base);
+        }
+    }
+
+    /* Normal need to flush after write data into eeprom */
+    EEPROM_Flush(base);
+}
+#if !(defined(FSL_FEATURE_EEPROM_PAGE_COUNT) && FSL_FEATURE_EEPROM_PAGE_COUNT)
+status_t EEPROM_WriteRow(EEPROM_Type *base, uint32_t rowNum, uint32_t *data)
+{
+    uint32_t i = 0;
+    uint32_t *addr = NULL;
+
+    if ((rowNum > FSL_FEATURE_EEPROM_ROW_COUNT) || (!data))
+    {
+        return kStatus_InvalidArgument;
+    }
+
+    /* Set auto program settings */
+    if (base->AUTOPROG != kEEPROM_AutoProgramDisable)
+    {
+        EEPROM_SetAutoProgram(base, kEEPROM_AutoProgramLastWord);
+    }
+
+    EEPROM_ClearInterruptFlag(base, kEEPROM_ProgramFinishInterruptEnable);
+
+    addr = (uint32_t *)(FSL_FEATURE_EEPROM_BASE_ADDRESS +
+                        rowNum * (FSL_FEATURE_EEPROM_SIZE / FSL_FEATURE_EEPROM_ROW_COUNT));
+    for (i = 0; i < (FSL_FEATURE_EEPROM_SIZE / FSL_FEATURE_EEPROM_ROW_COUNT) / 4U; i++)
+    {
+        addr[i] = data[i];
+    }
+
+    if (base->AUTOPROG == kEEPROM_AutoProgramDisable)
+    {
+        base->CMD = FSL_FEATURE_EEPROM_PROGRAM_CMD;
+    }
+
+    /* Waiting for operation finished */
+    while ((EEPROM_GetInterruptStatus(base) & kEEPROM_ProgramFinishInterruptEnable) == 0U)
+    {
+    }
+
+    return kStatus_Success;
+}
+#else
+/*!
+ * brief Write a page data into EEPROM.
+ *
+ * Users can write a page or at least a word data into EEPROM address.
+ *
+ * param base     EEPROM peripheral base address.
+ * param pageNum  Page number to be written.
+ * param data     Data need be write. This array data size shall equals to the page size.
+ */
 status_t EEPROM_WritePage(EEPROM_Type *base, uint32_t pageNum, uint32_t *data)
 {
     uint32_t i = 0;
@@ -196,8 +389,9 @@ status_t EEPROM_WritePage(EEPROM_Type *base, uint32_t pageNum, uint32_t *data)
 
     EEPROM_ClearInterruptFlag(base, kEEPROM_ProgramFinishInterruptEnable);
 
-    addr = (uint32_t *)(FSL_FEATURE_EEPROM_BASE_ADDRESS + pageNum * (FSL_FEATURE_EEPROM_SIZE/FSL_FEATURE_EEPROM_PAGE_COUNT));
-    for (i = 0; i < (FSL_FEATURE_EEPROM_SIZE/FSL_FEATURE_EEPROM_PAGE_COUNT) / 4U; i++)
+    addr = (uint32_t *)(FSL_FEATURE_EEPROM_BASE_ADDRESS +
+                        pageNum * (FSL_FEATURE_EEPROM_SIZE / FSL_FEATURE_EEPROM_PAGE_COUNT));
+    for (i = 0; i < (FSL_FEATURE_EEPROM_SIZE / FSL_FEATURE_EEPROM_PAGE_COUNT) / 4U; i++)
     {
         addr[i] = data[i];
     }
@@ -209,7 +403,9 @@ status_t EEPROM_WritePage(EEPROM_Type *base, uint32_t pageNum, uint32_t *data)
 
     /* Waiting for operation finished */
     while ((EEPROM_GetInterruptStatus(base) & kEEPROM_ProgramFinishInterruptEnable) == 0U)
-    {}
+    {
+    }
 
     return kStatus_Success;
 }
+#endif /* FSL_FEATURE_EEPROM_PAGE_COUNT */

@@ -1,36 +1,10 @@
 /*
- * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright (c) 2016 - 2017 , NXP
+ * Copyright (c) 2016 - 2018 , NXP
  * All rights reserved.
  *
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- * that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name ofcopyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_CLOCK_H_
@@ -52,15 +26,15 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief CLOCK driver version 2.0.1. */
-#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
+/*! @brief CLOCK driver version 2.0.3. */
+#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 0, 3))
 /*@}*/
 
 /*! @brief Configure whether driver controls clock
  *
  * When set to 0, peripheral drivers will enable clock in initialize function
  * and disable clock in de-initialize function. When set to 1, peripheral
- * driver will not control the clock, application could contol the clock out of
+ * driver will not control the clock, application could control the clock out of
  * the driver.
  *
  * @note All drivers share this feature switcher. If it is set to 1, application
@@ -78,24 +52,24 @@
  * right settings.
  */
 #ifndef CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT
-#define CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT  2U
+#define CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT 2U
 #endif
 
 /*! @brief FROHF clock setting API address in ROM. */
-#define CLOCK_FROHF_SETTING_API_ROM_ADDRESS  (0x030091DFU)
+#define CLOCK_FROHF_SETTING_API_ROM_ADDRESS (0x030091DFU)
 
 /**
  *  Initialize the Core clock to given frequency (12, 48 or 96 MHz), this API is implememnt in ROM code.
- *  Turns on FRO and uses default CCO, if freq is 12000000, then high speed output is off, else high speed 
+ *  Turns on FRO and uses default CCO, if freq is 12000000, then high speed output is off, else high speed
  *  output is enabled.
  *  Usage: set_fro_frequency(frequency), (frequency must be one of 12, 48 or 96 MHz)
  */
 
-#define set_fro_frequency(iFreq)  (*((void (*)(uint32_t iFreq))(CLOCK_FROHF_SETTING_API_ROM_ADDRESS)))(iFreq)
+#define set_fro_frequency(iFreq) (*((void (*)(uint32_t iFreq))(CLOCK_FROHF_SETTING_API_ROM_ADDRESS)))(iFreq)
 
 /*! @brief Clock ip name array for ROM. */
-#define ADC_CLOCKS \
-    {              \
+#define ADC_CLOCKS  \
+    {               \
         kCLOCK_Adc0 \
     }
 /*! @brief Clock ip name array for ROM. */
@@ -104,8 +78,8 @@
         kCLOCK_Rom \
     }
 /*! @brief Clock ip name array for SRAM. */
-#define SRAM_CLOCKS \
-    {               \
+#define SRAM_CLOCKS                              \
+    {                                            \
         kCLOCK_Sram1, kCLOCK_Sram2, kCLOCK_Sram3 \
     }
 /*! @brief Clock ip name array for FLASH. */
@@ -119,121 +93,120 @@
         kCLOCK_Fmc \
     }
 /*! @brief Clock ip name array for EEPROM. */
-#define EEPROM_CLOCKS  \
-    {                  \
-        kCLOCK_Eeprom  \
+#define EEPROM_CLOCKS \
+    {                 \
+        kCLOCK_Eeprom \
     }
 /*! @brief Clock ip name array for SPIFI. */
-#define SPIFI_CLOCKS  \
-    {                 \
-        kCLOCK_Spifi  \
+#define SPIFI_CLOCKS \
+    {                \
+        kCLOCK_Spifi \
     }
 /*! @brief Clock ip name array for INPUTMUX. */
-#define INPUTMUX_CLOCKS      \
-    {                        \
-        kCLOCK_InputMux      \
+#define INPUTMUX_CLOCKS \
+    {                   \
+        kCLOCK_InputMux \
     }
 /*! @brief Clock ip name array for IOCON. */
-#define IOCON_CLOCKS         \
-    {                        \
-        kCLOCK_Iocon         \
+#define IOCON_CLOCKS \
+    {                \
+        kCLOCK_Iocon \
     }
 /*! @brief Clock ip name array for GPIO. */
-#define GPIO_CLOCKS          \
-    {                        \
-        kCLOCK_Gpio0,kCLOCK_Gpio1, kCLOCK_Gpio2, kCLOCK_Gpio3, kCLOCK_Gpio4, kCLOCK_Gpio5     \
+#define GPIO_CLOCKS                                                                        \
+    {                                                                                      \
+        kCLOCK_Gpio0, kCLOCK_Gpio1, kCLOCK_Gpio2, kCLOCK_Gpio3, kCLOCK_Gpio4, kCLOCK_Gpio5 \
     }
 /*! @brief Clock ip name array for PINT. */
-#define PINT_CLOCKS          \
-    {                        \
-        kCLOCK_Pint          \
+#define PINT_CLOCKS \
+    {               \
+        kCLOCK_Pint \
     }
 /*! @brief Clock ip name array for GINT. */
-#define GINT_CLOCKS          \
-    {                        \
-        kCLOCK_Gint, kCLOCK_Gint          \
+#define GINT_CLOCKS              \
+    {                            \
+        kCLOCK_Gint, kCLOCK_Gint \
     }
 /*! @brief Clock ip name array for DMA. */
-#define DMA_CLOCKS          \
-    {                       \
-        kCLOCK_Dma          \
+#define DMA_CLOCKS \
+    {              \
+        kCLOCK_Dma \
     }
 /*! @brief Clock ip name array for CRC. */
-#define CRC_CLOCKS          \
-    {                       \
-        kCLOCK_Crc          \
+#define CRC_CLOCKS \
+    {              \
+        kCLOCK_Crc \
     }
 /*! @brief Clock ip name array for WWDT. */
-#define WWDT_CLOCKS          \
-    {                        \
-        kCLOCK_Wwdt          \
+#define WWDT_CLOCKS \
+    {               \
+        kCLOCK_Wwdt \
     }
 /*! @brief Clock ip name array for RTC. */
-#define RTC_CLOCKS          \
-    {                       \
-        kCLOCK_Rtc          \
+#define RTC_CLOCKS \
+    {              \
+        kCLOCK_Rtc \
     }
 /*! @brief Clock ip name array for ADC0. */
-#define ADC0_CLOCKS          \
-    {                        \
-        kCLOCK_Adc0          \
+#define ADC0_CLOCKS \
+    {               \
+        kCLOCK_Adc0 \
     }
 /*! @brief Clock ip name array for MRT. */
-#define MRT_CLOCKS           \
-    {                        \
-        kCLOCK_Mrt           \
+#define MRT_CLOCKS \
+    {              \
+        kCLOCK_Mrt \
     }
 /*! @brief Clock ip name array for RIT. */
-#define RIT_CLOCKS           \
-    {                        \
-        kCLOCK_Rit           \
+#define RIT_CLOCKS \
+    {              \
+        kCLOCK_Rit \
     }
 /*! @brief Clock ip name array for SCT0. */
-#define SCT_CLOCKS          \
-    {                        \
-        kCLOCK_Sct0          \
+#define SCT_CLOCKS  \
+    {               \
+        kCLOCK_Sct0 \
     }
 /*! @brief Clock ip name array for MCAN. */
-#define MCAN_CLOCKS          \
-    {                        \
-        kCLOCK_Mcan0, kCLOCK_Mcan1          \
+#define MCAN_CLOCKS                \
+    {                              \
+        kCLOCK_Mcan0, kCLOCK_Mcan1 \
     }
 /*! @brief Clock ip name array for UTICK. */
-#define UTICK_CLOCKS         \
-    {                        \
-        kCLOCK_Utick         \
+#define UTICK_CLOCKS \
+    {                \
+        kCLOCK_Utick \
     }
 /*! @brief Clock ip name array for FLEXCOMM. */
-#define FLEXCOMM_CLOCKS                                                        \
-    {                                                                          \
-        kCLOCK_FlexComm0, kCLOCK_FlexComm1, kCLOCK_FlexComm2, kCLOCK_FlexComm3, \
-					kCLOCK_FlexComm4, kCLOCK_FlexComm5, kCLOCK_FlexComm6, kCLOCK_FlexComm7, \
-                                        kCLOCK_FlexComm8, kCLOCK_FlexComm9 \
+#define FLEXCOMM_CLOCKS                                                                                             \
+    {                                                                                                               \
+        kCLOCK_FlexComm0, kCLOCK_FlexComm1, kCLOCK_FlexComm2, kCLOCK_FlexComm3, kCLOCK_FlexComm4, kCLOCK_FlexComm5, \
+            kCLOCK_FlexComm6, kCLOCK_FlexComm7, kCLOCK_FlexComm8, kCLOCK_FlexComm9                                  \
     }
 /*! @brief Clock ip name array for LPUART. */
 #define LPUART_CLOCKS                                                                                         \
     {                                                                                                         \
         kCLOCK_MinUart0, kCLOCK_MinUart1, kCLOCK_MinUart2, kCLOCK_MinUart3, kCLOCK_MinUart4, kCLOCK_MinUart5, \
-            kCLOCK_MinUart6, kCLOCK_MinUart7, kCLOCK_MinUart8,kCLOCK_MinUart9     \
+            kCLOCK_MinUart6, kCLOCK_MinUart7, kCLOCK_MinUart8, kCLOCK_MinUart9                                \
     }
 
 /*! @brief Clock ip name array for BI2C. */
-#define BI2C_CLOCKS                                                                                                     \
-    {                                                                                                                   \
-        kCLOCK_BI2c0, kCLOCK_BI2c1, kCLOCK_BI2c2, kCLOCK_BI2c3, kCLOCK_BI2c4, kCLOCK_BI2c5, kCLOCK_BI2c6, kCLOCK_BI2c7, \
-        kCLOCK_BI2c8, kCLOCK_BI2c9  \
+#define BI2C_CLOCKS                                                                                       \
+    {                                                                                                     \
+        kCLOCK_BI2c0, kCLOCK_BI2c1, kCLOCK_BI2c2, kCLOCK_BI2c3, kCLOCK_BI2c4, kCLOCK_BI2c5, kCLOCK_BI2c6, \
+            kCLOCK_BI2c7, kCLOCK_BI2c8, kCLOCK_BI2c9                                                      \
     }
 /*! @brief Clock ip name array for LSPI. */
-#define LPSI_CLOCKS                                                                                                     \
-    {                                                                                                                   \
-        kCLOCK_LSpi0, kCLOCK_LSpi1, kCLOCK_LSpi2, kCLOCK_LSpi3, kCLOCK_LSpi4, kCLOCK_LSpi5, kCLOCK_LSpi6, kCLOCK_LSpi7, \
-        kCLOCK_LSpi8, kCLOCK_LSpi9  \
+#define LPSI_CLOCKS                                                                                       \
+    {                                                                                                     \
+        kCLOCK_LSpi0, kCLOCK_LSpi1, kCLOCK_LSpi2, kCLOCK_LSpi3, kCLOCK_LSpi4, kCLOCK_LSpi5, kCLOCK_LSpi6, \
+            kCLOCK_LSpi7, kCLOCK_LSpi8, kCLOCK_LSpi9                                                      \
     }
 /*! @brief Clock ip name array for FLEXI2S. */
 #define FLEXI2S_CLOCKS                                                                                        \
     {                                                                                                         \
         kCLOCK_FlexI2s0, kCLOCK_FlexI2s1, kCLOCK_FlexI2s2, kCLOCK_FlexI2s3, kCLOCK_FlexI2s4, kCLOCK_FlexI2s5, \
-            kCLOCK_FlexI2s6, kCLOCK_FlexI2s7, kCLOCK_FlexI2s8, kCLOCK_FlexI2s9                                                                  \
+            kCLOCK_FlexI2s6, kCLOCK_FlexI2s7, kCLOCK_FlexI2s8, kCLOCK_FlexI2s9                                \
     }
 /*! @brief Clock ip name array for DMIC. */
 #define DMIC_CLOCKS \
@@ -241,73 +214,73 @@
         kCLOCK_DMic \
     }
 /*! @brief Clock ip name array for CT32B. */
-#define CTIMER_CLOCKS                                                               \
-    {                                                                               \
-        kCLOCK_Ct32b0, kCLOCK_Ct32b1, kCLOCK_Ct32b2, kCLOCK_Ct32b3, kCLOCK_Ct32b4   \
+#define CTIMER_CLOCKS                                                             \
+    {                                                                             \
+        kCLOCK_Ct32b0, kCLOCK_Ct32b1, kCLOCK_Ct32b2, kCLOCK_Ct32b3, kCLOCK_Ct32b4 \
     }
 /*! @brief Clock ip name array for LCD. */
-#define LCD_CLOCKS  \
-    {               \
-        kCLOCK_Lcd  \
+#define LCD_CLOCKS \
+    {              \
+        kCLOCK_Lcd \
     }
 /*! @brief Clock ip name array for SDIO. */
-#define SDIO_CLOCKS  \
-    {                \
-        kCLOCK_Sdio  \
+#define SDIO_CLOCKS \
+    {               \
+        kCLOCK_Sdio \
     }
 /*! @brief Clock ip name array for USBRAM. */
-#define USBRAM_CLOCKS    \
-    {                    \
-        kCLOCK_UsbRam1   \
+#define USBRAM_CLOCKS  \
+    {                  \
+        kCLOCK_UsbRam1 \
     }
 /*! @brief Clock ip name array for EMC. */
-#define EMC_CLOCKS       \
-    {                    \
-        kCLOCK_Emc       \
+#define EMC_CLOCKS \
+    {              \
+        kCLOCK_Emc \
     }
 /*! @brief Clock ip name array for ETH. */
-#define ETH_CLOCKS       \
-    {                    \
-        kCLOCK_Eth       \
+#define ETH_CLOCKS \
+    {              \
+        kCLOCK_Eth \
     }
 /*! @brief Clock ip name array for AES. */
-#define AES_CLOCKS       \
-    {                    \
-        kCLOCK_Aes       \
+#define AES_CLOCKS \
+    {              \
+        kCLOCK_Aes \
     }
 /*! @brief Clock ip name array for OTP. */
-#define OTP_CLOCKS       \
-    {                    \
-        kCLOCK_Otp       \
+#define OTP_CLOCKS \
+    {              \
+        kCLOCK_Otp \
     }
 /*! @brief Clock ip name array for RNG. */
-#define RNG_CLOCKS       \
-    {                    \
-        kCLOCK_Rng       \
+#define RNG_CLOCKS \
+    {              \
+        kCLOCK_Rng \
     }
 /*! @brief Clock ip name array for USBHMR0. */
-#define USBHMR0_CLOCKS       \
-    {                        \
-        kCLOCK_Usbhmr0       \
+#define USBHMR0_CLOCKS \
+    {                  \
+        kCLOCK_Usbhmr0 \
     }
 /*! @brief Clock ip name array for USBHSL0. */
-#define USBHSL0_CLOCKS       \
-    {                        \
-        kCLOCK_Usbhsl0       \
+#define USBHSL0_CLOCKS \
+    {                  \
+        kCLOCK_Usbhsl0 \
     }
 /*! @brief Clock ip name array for SHA0. */
-#define SHA0_CLOCKS       \
-    {                     \
-        kCLOCK_Sha0       \
+#define SHA0_CLOCKS \
+    {               \
+        kCLOCK_Sha0 \
     }
 /*! @brief Clock ip name array for SMARTCARD. */
-#define SMARTCARD_CLOCKS  \
-    {                     \
+#define SMARTCARD_CLOCKS                     \
+    {                                        \
         kCLOCK_SmartCard0, kCLOCK_SmartCard1 \
     }
 /*! @brief Clock ip name array for USBD. */
-#define USBD_CLOCKS  \
-    {                \
+#define USBD_CLOCKS                              \
+    {                                            \
         kCLOCK_Usbd0, kCLOCK_Usbh1, kCLOCK_Usbd1 \
     }
 /*! @brief Clock ip name array for USBH. */
@@ -421,7 +394,7 @@ typedef enum _clock_ip_name
     kCLOCK_Usbd1 = CLK_GATE_DEFINE(AHB_CLK_CTRL2, 5),
     kCLOCK_UsbRam1 = CLK_GATE_DEFINE(AHB_CLK_CTRL2, 6),
     kCLOCK_Emc = CLK_GATE_DEFINE(AHB_CLK_CTRL2, 7),
-    kCLOCK_Eth = CLK_GATE_DEFINE(AHB_CLK_CTRL2,8),
+    kCLOCK_Eth = CLK_GATE_DEFINE(AHB_CLK_CTRL2, 8),
     kCLOCK_Gpio4 = CLK_GATE_DEFINE(AHB_CLK_CTRL2, 9),
     kCLOCK_Gpio5 = CLK_GATE_DEFINE(AHB_CLK_CTRL2, 10),
     kCLOCK_Aes = CLK_GATE_DEFINE(AHB_CLK_CTRL2, 11),
@@ -501,18 +474,22 @@ typedef enum _async_clock_src
 } async_clock_src_t;
 
 /*! @brief Clock Mux Switches
-*  The encoding is as follows each connection identified is 64bits wide
+*  The encoding is as follows each connection identified is 32bits wide while 24bits are valuable
 *  starting from LSB upwards
 *
-*  [4 bits for choice, where 1 is A, 2 is B, 3 is C and 4 is D, 0 means end of descriptor] [8 bits mux ID]*
+*  [4 bits for choice, 0 means invalid choice] [8 bits mux ID]*
 *
 */
 
-#define MUX_A(m, choice) (((m) << 0) | ((choice + 1) << 8))
-#define MUX_B(m, choice) (((m) << 12) | ((choice + 1) << 20))
-#define MUX_C(m, choice) (((m) << 24) | ((choice + 1) << 32))
-#define MUX_D(m, choice) (((m) << 36) | ((choice + 1) << 44))
-#define MUX_E(m, choice) (((m) << 48) | ((choice + 1) << 56))
+#define CLK_ATTACH_ID(mux, sel, pos) (((mux << 0U) | ((sel + 1) & 0xFU) << 8U) << (pos * 12U))
+#define MUX_A(mux, sel) CLK_ATTACH_ID(mux, sel, 0U)
+#define MUX_B(mux, sel, selector) (CLK_ATTACH_ID(mux, sel, 1U) | (selector << 24U))
+
+#define GET_ID_ITEM(connection) ((connection)&0xFFFU)
+#define GET_ID_NEXT_ITEM(connection) ((connection) >> 12U)
+#define GET_ID_ITEM_MUX(connection) ((connection)&0xFFU)
+#define GET_ID_ITEM_SEL(connection) ((((connection)&0xF00U) >> 8U) - 1U)
+#define GET_ID_SELECTOR(connection) ((connection)&0xF000000U)
 
 #define CM_MAINCLKSELA 0
 #define CM_MAINCLKSELB 1
@@ -536,8 +513,8 @@ typedef enum _async_clock_src
 #define CM_MCLKCLKSEL 24
 #define CM_FRGCLKSEL 26
 #define CM_DMICCLKSEL 27
-#define CM_SCTCLKSEL  28
-#define CM_LCDCLKSEL  29
+#define CM_SCTCLKSEL 28
+#define CM_LCDCLKSEL 29
 #define CM_SDIOCLKSEL 30
 
 #define CM_ASYNCAPB 31
@@ -545,12 +522,12 @@ typedef enum _async_clock_src
 typedef enum _clock_attach_id
 {
 
-    kFRO12M_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 0) | MUX_B(CM_MAINCLKSELB, 0),
-    kEXT_CLK_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 1) | MUX_B(CM_MAINCLKSELB, 0),
-    kWDT_OSC_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 2) | MUX_B(CM_MAINCLKSELB, 0),
-    kFRO_HF_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 3) | MUX_B(CM_MAINCLKSELB, 0),
-    kSYS_PLL_to_MAIN_CLK = MUX_A(CM_MAINCLKSELB, 2),
-    kOSC32K_to_MAIN_CLK = MUX_A(CM_MAINCLKSELB, 3),
+    kFRO12M_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 0) | MUX_B(CM_MAINCLKSELB, 0, 0),
+    kEXT_CLK_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 1) | MUX_B(CM_MAINCLKSELB, 0, 0),
+    kWDT_OSC_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 2) | MUX_B(CM_MAINCLKSELB, 0, 0),
+    kFRO_HF_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 3) | MUX_B(CM_MAINCLKSELB, 0, 0),
+    kSYS_PLL_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 0) | MUX_B(CM_MAINCLKSELB, 2, 0),
+    kOSC32K_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 0) | MUX_B(CM_MAINCLKSELB, 3, 0),
 
     kMAIN_CLK_to_CLKOUT = MUX_A(CM_CLKOUTCLKSELA, 0),
     kEXT_CLK_to_CLKOUT = MUX_A(CM_CLKOUTCLKSELA, 1),
@@ -692,17 +669,17 @@ typedef enum _clock_attach_id
     kFRO_HF_to_SDIO_CLK = MUX_A(CM_SDIOCLKSEL, 3),
     kAUDIO_PLL_to_SDIO_CLK = MUX_A(CM_SDIOCLKSEL, 4),
     kNONE_to_SDIO_CLK = MUX_A(CM_SDIOCLKSEL, 7),
-    
+
     kMAIN_CLK_to_LCD_CLK = MUX_A(CM_LCDCLKSEL, 0),
     kLCDCLKIN_to_LCD_CLK = MUX_A(CM_LCDCLKSEL, 1),
     kFRO_HF_to_LCD_CLK = MUX_A(CM_LCDCLKSEL, 2),
     kNONE_to_LCD_CLK = MUX_A(CM_LCDCLKSEL, 3),
-    
+
     kMAIN_CLK_to_ASYNC_APB = MUX_A(CM_ASYNCAPB, 0),
     kFRO12M_to_ASYNC_APB = MUX_A(CM_ASYNCAPB, 1),
     kAUDIO_PLL_to_ASYNC_APB = MUX_A(CM_ASYNCAPB, 2),
     kI2C_CLK_FC6_to_ASYNC_APB = MUX_A(CM_ASYNCAPB, 3),
-    kNONE_to_NONE = 0x80000000U,
+    kNONE_to_NONE = (int)0x80000000U,
 } clock_attach_id_t;
 
 /*  Clock dividers */
@@ -763,7 +740,6 @@ static inline void CLOCK_DisableClock(clock_ip_name_t clk)
     {
         ASYNC_SYSCON->ASYNCAPBCLKCTRLCLR = (1U << CLK_GATE_ABSTRACT_BITS_SHIFT(clk));
         SYSCON->ASYNCAPBCTRL = SYSCON_ASYNCAPBCTRL_ENABLE(0);
-
     }
 }
 /**
@@ -811,6 +787,14 @@ status_t CLOCK_SetupFROClocking(uint32_t iFreq);
  * @return	Nothing
  */
 void CLOCK_AttachClk(clock_attach_id_t connection);
+/**
+ * @brief   Get the actual clock attach id.
+ * This fuction uses the offset in input attach id, then it reads the actual source value in
+ * the register and combine the offset to obtain an actual attach id.
+ * @param   attachId  : Clock attach id to get.
+ * @return  Clock source value.
+ */
+clock_attach_id_t CLOCK_GetClockAttachId(clock_attach_id_t attachId);
 /**
  * @brief	Setup peripheral clock dividers.
  * @param	div_name	: Clock divider name
@@ -1011,19 +995,18 @@ __STATIC_INLINE bool CLOCK_IsAudioPLLLocked(void)
 /*! @brief	Enables and disables SYS OSC
  *  @brief	enable	: true to enable SYS OSC, false to disable SYS OSC
 */
-__STATIC_INLINE  void CLOCK_Enable_SysOsc(bool enable)
+__STATIC_INLINE void CLOCK_Enable_SysOsc(bool enable)
 {
-    if(enable)
+    if (enable)
     {
         SYSCON->PDRUNCFGCLR[0] |= SYSCON_PDRUNCFG_PDEN_VD2_ANA_MASK;
         SYSCON->PDRUNCFGCLR[1] |= SYSCON_PDRUNCFG_PDEN_SYSOSC_MASK;
     }
-    
+
     else
     {
-        SYSCON->PDRUNCFGSET[0] = SYSCON_PDRUNCFG_PDEN_VD2_ANA_MASK; 
+        SYSCON->PDRUNCFGSET[0] = SYSCON_PDRUNCFG_PDEN_VD2_ANA_MASK;
         SYSCON->PDRUNCFGSET[1] = SYSCON_PDRUNCFG_PDEN_SYSOSC_MASK;
-
     }
 }
 
@@ -1055,12 +1038,12 @@ void CLOCK_SetStoredAudioPLLClockRate(uint32_t rate);
  */
 #define PLL_CONFIGFLAG_USEINRATE (1 << 0) /*!< Flag to use InputRate in PLL configuration structure for setup */
 #define PLL_CONFIGFLAG_FORCENOFRACT                                                                                    \
-    (1                                                                                                                 \
-     << 2) /*!< Force non-fractional output mode, PLL output will not use the fractional, automatic bandwidth, or SS \ \
-                \ \ \                                                                                                                     \
-                  \ \ \ \ \                                                                                                                     \
-                    \ \ \ \ \ \ \                                                                                                                     \
-                      hardware */
+    (1 << 2) /*!< Force non-fractional output mode, PLL output will not use the fractional, automatic bandwidth, or SS \
+                \ \                                                                                                    \
+                   \ \ \ \                                                                                                                     \
+                     \ \ \ \ \ \                                                                                                                     \
+                       \ \ \ \ \ \ \ \                                                                                                                     \
+                         hardware */
 
 /*! @brief PLL configuration structure
  *
@@ -1091,13 +1074,13 @@ typedef struct _pll_config
 */
 typedef struct _pll_setup
 {
-    uint32_t pllctrl;         /*!< PLL control register SYSPLLCTRL */
-    uint32_t pllndec;         /*!< PLL NDEC register SYSPLLNDEC */
-    uint32_t pllpdec;         /*!< PLL PDEC register SYSPLLPDEC */
-    uint32_t pllmdec;         /*!< PLL MDEC registers SYSPLLPDEC */
-    uint32_t pllRate;         /*!< Acutal PLL rate */
-    uint32_t audpllfrac;      /*!< only aduio PLL has this function*/
-    uint32_t flags;           /*!< PLL setup flags, Or'ed value of PLL_SETUPFLAG_* definitions */
+    uint32_t pllctrl;    /*!< PLL control register SYSPLLCTRL */
+    uint32_t pllndec;    /*!< PLL NDEC register SYSPLLNDEC */
+    uint32_t pllpdec;    /*!< PLL PDEC register SYSPLLPDEC */
+    uint32_t pllmdec;    /*!< PLL MDEC registers SYSPLLPDEC */
+    uint32_t pllRate;    /*!< Acutal PLL rate */
+    uint32_t audpllfrac; /*!< only aduio PLL has this function*/
+    uint32_t flags;      /*!< PLL setup flags, Or'ed value of PLL_SETUPFLAG_* definitions */
 } pll_setup_t;
 
 /*! @brief PLL status definitions
@@ -1122,7 +1105,8 @@ typedef enum _clock_usb_src
     kCLOCK_UsbSrcMainClock = (uint32_t)kCLOCK_CoreSysClk, /*!< Use Main clock.    */
     kCLOCK_UsbSrcUsbPll = (uint32_t)kCLOCK_UsbPll,        /*!< Use USB PLL clock.    */
 
-    kCLOCK_UsbSrcNone = SYSCON_USB0CLKSEL_SEL(7)          /*!< Use None, this may be selected in order to reduce power when no output is needed.. */
+    kCLOCK_UsbSrcNone = SYSCON_USB0CLKSEL_SEL(
+        7) /*!< Use None, this may be selected in order to reduce power when no output is needed.. */
 } clock_usb_src_t;
 
 /*! @brief USB PDEL Divider. */
@@ -1132,7 +1116,7 @@ typedef enum _usb_pll_psel
     pSel_Divide_2,
     pSel_Divide_4,
     pSel_Divide_8
-}usb_pll_psel;
+} usb_pll_psel;
 
 /*! @brief PLL setup structure
 * This structure can be used to pre-build a USB PLL setup configuration
@@ -1143,13 +1127,13 @@ typedef enum _usb_pll_psel
 */
 typedef struct _usb_pll_setup
 {
-  uint8_t msel;           /*!< USB PLL control register msel:1U-256U */
-  uint8_t psel;           /*!< USB PLL control register psel:only support inter 1U 2U 4U 8U */
-  uint8_t nsel;           /*!< USB PLL control register nsel:only suppoet inter 1U 2U 3U 4U */
-  bool direct;            /*!< USB PLL CCO output control */
-  bool bypass;            /*!< USB PLL inout clock bypass control  */
-  bool fbsel;             /*!< USB PLL ineter mode and non-integer mode control*/
-  uint32_t inputRate;     /*!< USB PLL input rate */
+    uint8_t msel;       /*!< USB PLL control register msel:1U-256U */
+    uint8_t psel;       /*!< USB PLL control register psel:only support inter 1U 2U 4U 8U */
+    uint8_t nsel;       /*!< USB PLL control register nsel:only suppoet inter 1U 2U 3U 4U */
+    bool direct;        /*!< USB PLL CCO output control */
+    bool bypass;        /*!< USB PLL inout clock bypass control  */
+    bool fbsel;         /*!< USB PLL ineter mode and non-integer mode control*/
+    uint32_t inputRate; /*!< USB PLL input rate */
 } usb_pll_setup_t;
 
 /*! @brief	Return System PLL output clock rate from setup structure
@@ -1218,7 +1202,8 @@ pll_error_t CLOCK_SetupSystemPLLPrec(pll_setup_t *pSetup, uint32_t flagcfg);
  */
 pll_error_t CLOCK_SetupAudioPLLPrec(pll_setup_t *pSetup, uint32_t flagcfg);
 
-/*! @brief	Set AUDIO PLL output from AUDIOPLL setup structure using the Audio Fractional divider register(precise frequency)
+/*! @brief	Set AUDIO PLL output from AUDIOPLL setup structure using the Audio Fractional divider register(precise
+* frequency)
  * @param	pSetup	: Pointer to populated PLL setup structure
 * @param flagcfg : Flag configuration for PLL config structure
  * @return	PLL_ERROR_SUCCESS on success, or PLL setup error code
